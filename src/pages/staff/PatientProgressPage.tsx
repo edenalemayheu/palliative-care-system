@@ -1,12 +1,12 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { usePatient } from '@/hooks/usePatients';
 import { usePatientProgress } from '@/hooks/usePatientProgress';
-import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { BackButton } from '@/components/common/BackButton';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import { ErrorState, EmptyState } from '@/components/common/EmptyState';
 
@@ -29,7 +29,7 @@ const PatientProgressPage: React.FC = () => {
     return (
       <div className="max-w-3xl space-y-6">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/patients/${id}`)}><ArrowLeft size={18} /></Button>
+          <BackButton to={`/patients/${id}`} label="Patient" />
           <h1 className="text-xl font-bold text-on-surface">Patient Progress</h1>
         </div>
         <EmptyState title="No progress data" description="KPS/PPS scores are recorded during home visits." />
@@ -42,7 +42,7 @@ const PatientProgressPage: React.FC = () => {
   return (
     <div className="max-w-4xl space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/patients/${id}`)}><ArrowLeft size={18} /></Button>
+        <BackButton to={`/patients/${id}`} label="Patient" />
         <div>
           <h1 className="text-xl font-bold text-on-surface">Progress: {progress.patientName}</h1>
           <p className="text-sm text-text-secondary">KPS & PPS trend over {progress.visits.length} visits</p>

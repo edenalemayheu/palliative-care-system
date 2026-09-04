@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { updateAdmissionSchema, type UpdateAdmissionFormData } from '@/schemas/admission.schema';
 import { useAdmissionDetail, useUpdateAdmission } from '@/hooks/useAdmissions';
 import { Button } from '@/components/ui/Button';
@@ -11,6 +11,7 @@ import { Select } from '@/components/ui/Select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { BackButton } from '@/components/common/BackButton';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import { ErrorState } from '@/components/common/EmptyState';
 import { formatDate, formatEnumLabel } from '@/lib/utils';
@@ -41,7 +42,7 @@ const AdmissionDetailPage: React.FC = () => {
     <div className="max-w-3xl space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/patients/${id}`)}><ArrowLeft size={18} /></Button>
+          <BackButton label="Patient" />
           <div>
             <h1 className="text-xl font-bold text-on-surface">Admission Detail</h1>
             <p className="text-sm text-text-secondary">{formatDate(adm.admissionDate)}</p>

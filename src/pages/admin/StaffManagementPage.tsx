@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
+import { BackButton } from '@/components/common/BackButton';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import { EmptyState, ErrorState } from '@/components/common/EmptyState';
 import { formatDate, formatRelativeTime } from '@/lib/utils';
@@ -22,6 +23,7 @@ const StaffManagementPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <BackButton to="/admin" label="Dashboard" />
           <h1 className="text-2xl font-bold text-on-surface">Staff Management</h1>
           <p className="text-sm text-text-secondary">Approve or reject staff registration requests</p>
         </div>

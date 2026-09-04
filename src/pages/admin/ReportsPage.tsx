@@ -7,6 +7,7 @@ import {
 import { useReports, useExportReport } from '@/hooks/useAdmin';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { BackButton } from '@/components/common/BackButton';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import { ErrorState } from '@/components/common/EmptyState';
 
@@ -23,6 +24,7 @@ const ReportsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <BackButton to="/admin" label="Dashboard" />
           <h1 className="text-2xl font-bold text-on-surface">Reports & Analytics</h1>
           <p className="text-sm text-text-secondary">System-wide statistics and trends</p>
         </div>

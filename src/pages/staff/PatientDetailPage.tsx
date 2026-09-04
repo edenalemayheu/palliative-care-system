@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ClipboardList, Pill, FlaskConical, GitBranch, Building2, BarChart2, FileText, Home, Hospital, Phone, MapPin } from 'lucide-react';
+import { ClipboardList, Pill, FlaskConical, GitBranch, Building2, BarChart2, FileText, Home, Hospital, Phone, MapPin, Plus, ChevronRight as ChevronRightIcon, Printer } from 'lucide-react';
 import { usePatient } from '@/hooks/usePatients';
 import { usePatientVisits } from '@/hooks/useVisits';
 import { usePatientMedications } from '@/hooks/useMedications';
@@ -11,10 +11,122 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { BackButton } from '@/components/common/BackButton';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import { ErrorState, EmptyState } from '@/components/common/EmptyState';
 import { formatDate, cn } from '@/lib/utils';
 import { DISEASE_STAGE_LABELS, VISIT_TYPE_LABELS, OUTCOME_LABELS } from '@/constants';
+import { printPatientReport } from '@/lib/printPatientReport';
+import { APP_NAME } from '@/lib/config';
+
+// ── Record-type picker modal ─────────────────────────────────────
+interface RecordType {
+  key: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  route: (id: string) => string;
+}
+
+const RECORD_TYPES: RecordType[] = [
+  {
+    key: 'visit',
+    label: 'Home Visit Record',
+    description: 'Record a home visit, vitals, pain assessment, and care observations.',
+    icon: <ClipboardList size={20} />,
+    route: (id) => `/patients/${id}/visits`,
+  },
+  {
+    key: 'medication',
+    label: 'Medication Order',
+    description: 'Order or document a medication for this patient.',
+    icon: <Pill size={20} />,
+    route: (id) => `/patients/${id}/medications`,
+  },
+  {
+    key: 'lab',
+    label: 'Lab Test Order',
+    description: 'Request a laboratory test or enter existing results.',
+    icon: <FlaskConical size={20} />,
+    route: (id) => `/patients/${id}/labs`,
+  },
+  {
+    key: 'referral',
+    label: 'Referral Request',
+    description: 'Submit a referral to another facility or specialist.',
+    icon: <GitBranch size={20} />,
+    route: (id) => `/patients/${id}/referrals`,
+  },
+  {
+    key: 'admission',
+    label: 'Hospital Admission',
+    description: 'Record a hospital admission linked to an accepted referral.',
+    icon: <Building2 size={20} />,
+    route: (id) => `/patients/${id}/admissions`,
+  },
+];
+
+interface AddRecordModalProps {
+  patientId: string;
+  patientName: string;
+  onClose: () => void;
+  onSelect: (route: string) => void;
+}
+
+const AddRecordModal: React.FC<AddRecordModalProps> = ({ patientId, patientName, onClose, onSelect }) => (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/30 backdrop-blur-sm p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="add-record-title"
+  >
+    <div className="w-full max-w-md bg-surface-lowest rounded-2xl border border-border-base shadow-xl">
+      {/* Header */}
+      <div className="px-6 pt-5 pb-4 border-b border-border-base">
+        <div className="flex items-center gap-2 mb-0.5">
+          <Plus size={17} className="text-primary" />
+          <h2 id="add-record-title" className="text-base font-semibold text-on-surface">
+            Add Record
+          </h2>
+        </div>
+        <p className="text-xs text-text-muted mt-1">
+          Select the type of record to add for <span className="font-medium text-on-surface">{patientName}</span>
+        </p>
+      </div>
+
+      {/* Record type list */}
+      <div className="py-2">
+        {RECORD_TYPES.map((rt) => (
+          <button
+            key={rt.key}
+            onClick={() => onSelect(rt.route(patientId))}
+            className="w-full flex items-center gap-4 px-6 py-3.5 text-left hover:bg-surface-low transition-colors group"
+          >
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+              {rt.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">
+                {rt.label}
+              </p>
+              <p className="text-xs text-text-muted leading-relaxed mt-0.5">
+                {rt.description}
+              </p>
+            </div>
+            <ChevronRightIcon size={15} className="text-outline-variant flex-shrink-0 group-hover:text-primary transition-colors" />
+          </button>
+        ))}
+      </div>
+
+      {/* Cancel */}
+      <div className="px-6 pb-5 pt-2 border-t border-border-base">
+        <Button variant="outline" className="w-full" onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  </div>
+);
 
 const tabs = ['Visits', 'Medications', 'Labs', 'Referrals', 'Admissions'] as const;
 type Tab = typeof tabs[number];
@@ -23,6 +135,8 @@ const PatientDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('Visits');
+  const [showAddRecord, setShowAddRecord] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const { data: patient, isLoading, error, refetch } = usePatient(id!);
   const { data: visitsData } = usePatientVisits(id!);
@@ -42,12 +156,29 @@ const PatientDetailPage: React.FC = () => {
     Admissions: admsData?.total ?? 0,
   };
 
+  const handlePrint = () => {
+    setIsPrinting(true);
+    // Small tick so the button loading state renders before the print dialog blocks the thread
+    setTimeout(() => {
+      printPatientReport({
+        patient,
+        visits:      visitsData?.items     ?? [],
+        medications: medsData?.items       ?? [],
+        labs:        labsData?.items       ?? [],
+        referrals:   refsData?.items       ?? [],
+        admissions:  admsData?.items       ?? [],
+        appName:     APP_NAME,
+      });
+      setIsPrinting(false);
+    }, 50);
+  };
+
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/patients')}><ArrowLeft size={18} /></Button>
+          <BackButton to="/patients" label="Patients" />
           <div>
             <p className="text-xs text-text-muted font-mono">{patient.patientDisplayId}</p>
             <h1 className="text-xl font-bold text-on-surface">{patient.firstName} {patient.lastName}</h1>
@@ -56,8 +187,24 @@ const PatientDetailPage: React.FC = () => {
         <div className="flex items-center gap-2 flex-wrap">
           <StatusBadge status={patient.status} type="patient" />
           <StatusBadge status={patient.currentLocation} />
+          <Button
+            size="sm"
+            leftIcon={<Plus size={14} />}
+            onClick={() => setShowAddRecord(true)}
+          >
+            Add Record
+          </Button>
           <Button variant="outline" size="sm" leftIcon={<FileText size={14} />} onClick={() => navigate(`/patients/${id}/summary`)}>Summary</Button>
           <Button variant="outline" size="sm" leftIcon={<BarChart2 size={14} />} onClick={() => navigate(`/patients/${id}/progress`)}>Progress</Button>
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Printer size={14} />}
+            loading={isPrinting}
+            onClick={handlePrint}
+          >
+            Print History
+          </Button>
         </div>
       </div>
 
@@ -223,6 +370,15 @@ const PatientDetailPage: React.FC = () => {
           )}
         </div>
       </Card>
+      {/* Add Record modal */}
+      {showAddRecord && (
+        <AddRecordModal
+          patientId={id!}
+          patientName={`${patient.firstName} ${patient.lastName}`}
+          onClose={() => setShowAddRecord(false)}
+          onSelect={(route) => { setShowAddRecord(false); navigate(route); }}
+        />
+      )}
     </div>
   );
 };

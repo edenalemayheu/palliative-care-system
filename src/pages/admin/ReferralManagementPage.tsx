@@ -1,15 +1,18 @@
 import React from 'react';
-import { GitBranch, CheckCircle2, XCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { GitBranch, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
 import { usePendingReferrals, useApproveReferral, useDeclineReferral } from '@/hooks/useAdmin';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { BackButton } from '@/components/common/BackButton';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import { EmptyState, ErrorState } from '@/components/common/EmptyState';
 import { formatDate } from '@/lib/utils';
 import { REFERRAL_REASON_LABELS } from '@/constants';
 
 const ReferralManagementPage: React.FC = () => {
+  const navigate = useNavigate();
   const { data: referrals, isLoading, error, refetch } = usePendingReferrals();
   const approveMutation = useApproveReferral();
   const declineMutation = useDeclineReferral();
@@ -21,6 +24,7 @@ const ReferralManagementPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <BackButton to="/admin" label="Dashboard" />
           <h1 className="text-2xl font-bold text-on-surface">Referral Management</h1>
           <p className="text-sm text-text-secondary">Review and act on pending referral requests</p>
         </div>
@@ -43,8 +47,16 @@ const ReferralManagementPage: React.FC = () => {
             <Card key={ref.id} padding="lg">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="space-y-3 flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-on-surface">Patient ID: {ref.patientId}</h3>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* Clickable patient ID — navigates to patient detail */}
+                    <button
+                      onClick={() => navigate(`/admin/patients/${ref.patientId}`)}
+                      className="font-semibold text-on-surface hover:text-primary transition-colors flex items-center gap-1.5 group"
+                      title="View patient details"
+                    >
+                      Patient ID: {ref.patientId}
+                      <ExternalLink size={12} className="text-text-muted group-hover:text-primary transition-colors" />
+                    </button>
                     <Badge variant="warning">Pending</Badge>
                     <span className="text-xs text-text-muted">{ref.referralType} referral</span>
                   </div>
@@ -74,6 +86,17 @@ const ReferralManagementPage: React.FC = () => {
                 </div>
 
                 <div className="flex md:flex-col gap-2 md:w-32 flex-shrink-0">
+                  {/* View patient before deciding */}
+                  <Button
+                    className="flex-1 md:flex-none"
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<ExternalLink size={13} />}
+                    onClick={() => navigate(`/admin/patients/${ref.patientId}`)}
+                  >
+                    View Patient
+                  </Button>
+
                   <Button
                     className="flex-1 md:flex-none"
                     leftIcon={<CheckCircle2 size={14} />}

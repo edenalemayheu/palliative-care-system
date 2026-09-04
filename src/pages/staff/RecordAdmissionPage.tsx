@@ -2,7 +2,6 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft } from 'lucide-react';
 import { createAdmissionSchema, type CreateAdmissionFormData } from '@/schemas/admission.schema';
 import { useRecordAdmission } from '@/hooks/useAdmissions';
 import { usePatient } from '@/hooks/usePatients';
@@ -13,6 +12,7 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { BackButton } from '@/components/common/BackButton';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import { SYMPTOM_LABELS } from '@/constants';
 
@@ -53,7 +53,7 @@ const RecordAdmissionPage: React.FC = () => {
   return (
     <div className="max-w-3xl space-y-5">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/patients/${id}`)}><ArrowLeft size={18} /></Button>
+        <BackButton to={`/patients/${id}`} label="Patient" />
         <div>
           <h1 className="text-xl font-bold text-on-surface">Record Hospital Admission</h1>
           {patient && <p className="text-sm text-text-secondary">{patient.firstName} {patient.lastName}</p>}

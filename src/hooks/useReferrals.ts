@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { referralApi } from '@/api/referrals';
 import type { CreateReferralRequest } from '@/types/referral.types';
+import { useToast } from '@/context/ToastContext';
 
 export function usePatientReferrals(patientId: string, params?: { status?: string; page?: number; limit?: number }) {
   return useQuery({
@@ -20,12 +21,17 @@ export function useReferralDetail(patientId: string, referralId: string) {
 
 export function useRequestReferral(patientId: string) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: (data: CreateReferralRequest) => referralApi.create(patientId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients', patientId, 'referrals'] });
       queryClient.invalidateQueries({ queryKey: ['patients', patientId, 'summary'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'referrals', 'pending'] });
+      toast.success('Referral submitted successfully. Awaiting admin approval.');
+    },
+    onError: () => {
+      toast.error('Failed to submit referral. Please try again.');
     },
   });
 }

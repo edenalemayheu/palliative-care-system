@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { visitApi } from '@/api/visits';
 import type { CreateVisitRequest } from '@/types/visit.types';
+import { useToast } from '@/context/ToastContext';
 
 export function usePatientVisits(patientId: string, params?: { page?: number; limit?: number }) {
   return useQuery({
@@ -20,6 +21,7 @@ export function useVisitDetail(patientId: string, visitId: string) {
 
 export function useRecordVisit(patientId: string) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: (data: CreateVisitRequest) => visitApi.create(patientId, data),
     onSuccess: () => {
@@ -27,6 +29,10 @@ export function useRecordVisit(patientId: string) {
       queryClient.invalidateQueries({ queryKey: ['patients', patientId, 'summary'] });
       queryClient.invalidateQueries({ queryKey: ['patients', patientId, 'progress'] });
       queryClient.invalidateQueries({ queryKey: ['staff', 'dashboard', 'stats'] });
+      toast.success('Home visit recorded successfully.');
+    },
+    onError: () => {
+      toast.error('Failed to record visit. Please try again.');
     },
   });
 }

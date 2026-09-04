@@ -81,8 +81,63 @@ interface SidebarProps {
   pendingReferrals?: number;
 }
 
+// ── Logout confirmation dialog ───────────────────────────────────
+interface LogoutDialogProps {
+  onConfirm: () => void;
+  onCancel: () => void;
+  isPending: boolean;
+}
+
+const LogoutDialog: React.FC<LogoutDialogProps> = ({ onConfirm, onCancel, isPending }) => (
+  <div
+    className="fixed inset-0 z-[60] flex items-center justify-center bg-on-surface/30 backdrop-blur-sm p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="logout-dialog-title"
+  >
+    <div className="w-full max-w-sm bg-surface-lowest rounded-2xl border border-border-base shadow-xl p-6">
+      {/* Icon */}
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-error-bg text-error mb-4">
+        <LogOut size={20} />
+      </div>
+
+      <h2 id="logout-dialog-title" className="text-base font-semibold text-on-surface mb-1">
+        Sign out?
+      </h2>
+      <p className="text-sm text-text-secondary mb-6">
+        Are you sure you want to log out of your account?
+      </p>
+
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isPending}
+          className="flex-1 rounded-xl border border-border-base bg-surface-lowest px-4 py-2.5 text-sm font-medium text-on-surface hover:bg-surface-low transition-colors disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={isPending}
+          className="flex-1 rounded-xl bg-error px-4 py-2.5 text-sm font-medium text-white hover:bg-error/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {isPending ? (
+            <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+          ) : (
+            <LogOut size={14} />
+          )}
+          Log Out
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingReferrals = 0 }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { user } = useAuthStore();
   const logoutMutation = useLogout();
 
@@ -91,10 +146,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
     ? adminNavItems(pendingStaff, pendingReferrals)
     : staffNavItems();
 
+  const handleLogoutConfirm = () => {
+    logoutMutation.mutate(undefined, {
+      onSettled: () => setShowLogoutDialog(false),
+    });
+  };
+
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
       {/* ── Logo ── */}
-      <div className="px-5 pt-6 pb-3">
+      <div className="px-5 pt-6 pb-3 flex-shrink-0">
         <div className="flex items-center gap-2.5 mb-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm flex-shrink-0">
             <Heart size={18} className="text-white animate-heartbeat" />
@@ -109,7 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
       </div>
 
       {/* ── Nav items ── */}
-      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto min-h-0">
         {navItems.map((item) => (
           <NavLink
             key={item.href + item.label}
@@ -145,8 +206,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
         ))}
       </nav>
 
-      {/* ── User info + logout ── */}
-      <div className="border-t border-border-base p-3 mt-2">
+      {/* ── User info + logout ── sticky footer, never scrolls away ── */}
+      <div className="flex-shrink-0 border-t border-border-base p-3 bg-surface-lowest">
         <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-surface-low transition-colors">
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary-light text-primary text-xs font-bold">
             {getInitials(user?.name || 'U')}
@@ -158,9 +219,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
             </p>
           </div>
           <button
-            onClick={() => logoutMutation.mutate()}
+            onClick={() => setShowLogoutDialog(true)}
             className="flex-shrink-0 p-1.5 rounded-lg text-text-muted hover:text-error hover:bg-error-bg transition-all"
-            aria-label="Logout"
+            aria-label="Log out"
+            title="Log out"
           >
             <LogOut size={15} />
           </button>
@@ -172,7 +234,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-60 min-h-screen bg-surface-lowest border-r border-border-base shadow-nav flex-shrink-0">
+      <aside className="hidden lg:flex flex-col w-60 h-screen sticky top-0 bg-surface-lowest border-r border-border-base shadow-nav flex-shrink-0">
         <SidebarContent />
       </aside>
 
@@ -209,6 +271,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
         </button>
         <SidebarContent />
       </aside>
+      {/* Logout confirmation dialog */}
+      {showLogoutDialog && (
+        <LogoutDialog
+          onConfirm={handleLogoutConfirm}
+          onCancel={() => setShowLogoutDialog(false)}
+          isPending={logoutMutation.isPending}
+        />
+      )}
     </>
   );
 };

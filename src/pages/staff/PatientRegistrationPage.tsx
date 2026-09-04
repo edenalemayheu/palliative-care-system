@@ -2,13 +2,13 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft } from 'lucide-react';
 import { createPatientSchema, type CreatePatientFormData } from '@/schemas/patient.schema';
 import { useRegisterPatient } from '@/hooks/usePatients';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { BackButton } from '@/components/common/BackButton';
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <Card padding="lg">
@@ -39,7 +39,7 @@ const PatientRegistrationPage: React.FC = () => {
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/patients')} aria-label="Back"><ArrowLeft size={18} /></Button>
+        <BackButton to="/patients" label="Patients" />
         <div>
           <h1 className="text-2xl font-bold text-on-surface">Register New Patient</h1>
           <p className="text-sm text-text-secondary">Fill in all required information</p>
