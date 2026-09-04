@@ -1,11 +1,13 @@
 import React from 'react';
 import { Settings, Info, Shield, Database } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { BackButton } from '@/components/common/BackButton';
 import { APP_NAME } from '@/lib/config';
 
 const SettingsPage: React.FC = () => (
   <div className="space-y-6 max-w-3xl">
     <div>
+      <BackButton to="/admin" label="Dashboard" />
       <h1 className="text-2xl font-bold text-on-surface">Settings</h1>
       <p className="text-sm text-text-secondary">System configuration and information</p>
     </div>

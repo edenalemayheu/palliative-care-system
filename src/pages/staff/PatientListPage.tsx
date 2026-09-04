@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/Select';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { BackButton } from '@/components/common/BackButton';
 import { Pagination } from '@/components/common/Pagination';
 import { SkeletonCard } from '@/components/common/LoadingSpinner';
 import { EmptyState, ErrorState } from '@/components/common/EmptyState';
@@ -74,6 +75,7 @@ const PatientListPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <BackButton to="/dashboard" label="Dashboard" />
           <h1 className="text-2xl font-bold text-on-surface">Patients</h1>
           <p className="text-sm text-text-secondary">
             {data ? `${data.total} patients registered` : 'Manage your patient list'}

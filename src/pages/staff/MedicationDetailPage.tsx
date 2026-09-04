@@ -1,10 +1,11 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { useMedicationDetail, useUpdateMedicationStatus } from '@/hooks/useMedications';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { BackButton } from '@/components/common/BackButton';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import { ErrorState } from '@/components/common/EmptyState';
 import { formatDate } from '@/lib/utils';
@@ -21,7 +22,7 @@ const MedicationDetailPage: React.FC = () => {
   return (
     <div className="max-w-xl space-y-5">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/patients/${id}`)}><ArrowLeft size={18} /></Button>
+        <BackButton label="Patient" />
         <h1 className="text-xl font-bold text-on-surface">Medication Detail</h1>
         <StatusBadge status={med.status} type="medication" />
       </div>

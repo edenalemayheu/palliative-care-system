@@ -82,6 +82,7 @@ export const mockAdminApi = {
       status: p.status,
       currentLocation: p.currentLocation,
       primaryDiagnosis: p.primaryDiagnosis,
+      diseaseStage: p.diseaseStage,
       registeredAt: p.createdAt,
       registeredBy: { id: 'staff-001', name: 'John Doe' },
     }));

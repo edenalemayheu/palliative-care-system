@@ -1,11 +1,10 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { useReferralDetail } from '@/hooks/useReferrals';
-import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { BackButton } from '@/components/common/BackButton';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import { ErrorState } from '@/components/common/EmptyState';
 import { formatDate } from '@/lib/utils';
@@ -22,7 +21,7 @@ const ReferralDetailPage: React.FC = () => {
   return (
     <div className="max-w-3xl space-y-5">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/patients/${id}`)}><ArrowLeft size={18} /></Button>
+        <BackButton label="Patient" />
         <div>
           <h1 className="text-xl font-bold text-on-surface">Referral Detail</h1>
           <p className="text-sm text-text-secondary">{formatDate(ref.referralDate)}</p>

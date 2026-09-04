@@ -8,6 +8,7 @@ import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { BackButton } from '@/components/common/BackButton';
 import { Pagination } from '@/components/common/Pagination';
 import { PageLoader, SkeletonTable } from '@/components/common/LoadingSpinner';
 import { EmptyState, ErrorState } from '@/components/common/EmptyState';
@@ -26,6 +27,7 @@ const AdminPatientListPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
+        <BackButton to="/admin" label="Dashboard" />
         <h1 className="text-2xl font-bold text-on-surface">All Patients</h1>
         <p className="text-sm text-text-secondary">View and manage all registered patients</p>
       </div>
@@ -75,6 +77,7 @@ const AdminPatientListPage: React.FC = () => {
                     <td className="px-5 py-3.5 font-medium text-on-surface">{p.firstName} {p.lastName}</td>
                     <td className="px-5 py-3.5 text-text-secondary">{p.age}y · {p.sex[0]}</td>
                     <td className="px-5 py-3.5 text-text-secondary max-w-[180px] truncate">{p.primaryDiagnosis}</td>
+                    <td className="px-5 py-3.5"><Badge variant="secondary">{DISEASE_STAGE_LABELS[p.diseaseStage] ?? p.diseaseStage}</Badge></td>
                     <td className="px-5 py-3.5"><StatusBadge status={p.currentLocation} /></td>
                     <td className="px-5 py-3.5"><StatusBadge status={p.status} type="patient" /></td>
                     <td className="px-5 py-3.5 text-text-muted whitespace-nowrap">{formatDate(p.registeredAt)}</td>
