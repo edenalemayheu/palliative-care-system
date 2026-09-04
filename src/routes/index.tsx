@@ -67,6 +67,12 @@ const AppRoutes: React.FC = () => (
         <Route path="/admin" element={<S><AdminDashboardPage /></S>} />
         <Route path="/admin/patients" element={<S><AdminPatientListPage /></S>} />
         <Route path="/admin/patients/:patientId" element={<S><AdminPatientDetailPage /></S>} />
+        {/* Admin sub-record detail routes — reuse staff detail pages (read-only view) */}
+        <Route path="/admin/patients/:id/visits/:visitId" element={<S><VisitDetailPage /></S>} />
+        <Route path="/admin/patients/:id/medications/:medicationId" element={<S><MedicationDetailPage /></S>} />
+        <Route path="/admin/patients/:id/labs/:labId" element={<S><LabDetailPage /></S>} />
+        <Route path="/admin/patients/:id/referrals/:referralId" element={<S><ReferralDetailPage /></S>} />
+        <Route path="/admin/patients/:id/admissions/:admissionId" element={<S><AdmissionDetailPage /></S>} />
         <Route path="/admin/staff" element={<S><StaffManagementPage /></S>} />
         <Route path="/admin/referrals" element={<S><ReferralManagementPage /></S>} />
         <Route path="/admin/reports" element={<S><ReportsPage /></S>} />

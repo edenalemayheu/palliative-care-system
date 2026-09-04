@@ -92,6 +92,7 @@ export interface AdminPatient {
   status: 'Active' | 'Discharged';
   currentLocation: 'Home' | 'ReferredHospital';
   primaryDiagnosis: string;
+  diseaseStage: 'Early' | 'Advanced' | 'EndStage';
   registeredAt: string;
   registeredBy: { id: string; name: string };
 }
