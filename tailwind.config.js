@@ -41,7 +41,7 @@ export default {
         tertiary: '#4C5C7D',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Outfit', 'system-ui', '-apple-system', 'sans-serif'],
       },
       fontSize: {
         'hero-lg': ['48px', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '800' }],
