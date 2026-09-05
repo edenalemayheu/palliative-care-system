@@ -23,6 +23,9 @@ export const MOCK_USERS = {
   } satisfies User,
 };
 
+// ── Track current user for mock API ──────────────────────────────
+let currentUser: User | null = null;
+
 // Additional staff for admin panel fixtures
 export const MOCK_STAFF_LIST = [
   { id: 'staff-001', name: 'John Doe', email: 'john@gmail.com', phone: '+251911234567', role: 'Physician' as const, status: 'Active' as const, isEmailVerified: true, createdAt: '2026-01-15T08:00:00Z' },
@@ -73,9 +76,11 @@ export const mockAuthApi = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
     await delay(600);
     if (email === 'john@gmail.com' && password === 'abcdefghi') {
+      currentUser = MOCK_USERS.staff;
       return { token: 'mock-staff-token-xyz123', user: MOCK_USERS.staff };
     }
     if (email === 'admin@example.com' && password === 'admin123') {
+      currentUser = MOCK_USERS.admin;
       return { token: 'mock-admin-token-abc456', user: MOCK_USERS.admin };
     }
     const err = new Error('Invalid email or password') as Error & { response?: { data?: { message: string }; status: number } };
@@ -118,68 +123,90 @@ export const mockAuthApi = {
 
   getCurrentUser: async (): Promise<User> => {
     await delay(300);
-    return MOCK_USERS.staff;
+    // Return the currently logged-in user, or staff as fallback
+    return currentUser || MOCK_USERS.staff;
   },
 
   getStaffProfile: async (): Promise<StaffProfile> => {
     await delay(300);
+    // If admin is logged in, return admin profile as staff (fallback)
+    if (currentUser?.type === 'admin') {
+      return {
+        id: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+        phone: '+251900000000',
+        role: 'Physician',
+        status: 'Active',
+        isEmailVerified: true,
+        assignedPatientsCount: 0,
+        todayVisitsCount: 0,
+        createdAt: currentUser.createdAt || new Date().toISOString(),
+      } as StaffProfile;
+    }
     return MOCK_STAFF_PROFILE;
   },
 
   logout: async (): Promise<void> => {
     await delay(200);
+    currentUser = null;
   },
 
-updateProfile: async (data: { name?: string; phone?: string }) => {
-  await delay(500);
-  return {
-    id: MOCK_STAFF_PROFILE.id,
-    name: data.name || MOCK_STAFF_PROFILE.name,
-    email: MOCK_STAFF_PROFILE.email,
-    phone: data.phone || MOCK_STAFF_PROFILE.phone,
-    role: MOCK_STAFF_PROFILE.role,
-    type: 'staff' as const,
-    status: MOCK_STAFF_PROFILE.status,
-    isEmailVerified: MOCK_STAFF_PROFILE.isEmailVerified,
-    updatedAt: new Date().toISOString(),
-  };
-},
-
-  // ── NEW: Profile endpoints for the profile page ────────────────
-
-  /**
-   * Get the current user's full profile
-   * GET /profile
-   */
-  getProfile: async () => {
-    await delay(300);
+  updateProfile: async (data: { name?: string; phone?: string }) => {
+    await delay(500);
+    const user = currentUser || MOCK_USERS.staff;
     return {
-      ...MOCK_USERS.staff,
-      phone: '+251911234567',
-      role: 'Physician' as const,
-      status: 'Active' as const,
-      isEmailVerified: true,
+      id: user.id,
+      name: data.name || user.name,
+      email: user.email,
+      phone: data.phone || (user.type === 'staff' ? '+251911234567' : ''),
+      role: user.type === 'staff' ? 'Physician' : undefined,
+      type: user.type,
+      status: user.type === 'staff' ? 'Active' : undefined,
+      isEmailVerified: user.type === 'staff' ? true : undefined,
       updatedAt: new Date().toISOString(),
     };
   },
 
-  /**
-   * Change user password
-   * PUT /profile/password
-   */
+  // ── Profile endpoints ──────────────────────────────────────────
+  getProfile: async () => {
+    await delay(300);
+    const user = currentUser || MOCK_USERS.staff;
+    if (user.type === 'admin') {
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        type: 'admin' as const,
+        createdAt: user.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: (user as any).phone || '+251911234567',
+      role: (user as any).role || 'Physician',
+      type: 'staff' as const,
+      status: (user as any).status || 'Active',
+      isEmailVerified: (user as any).isEmailVerified !== undefined ? (user as any).isEmailVerified : true,
+      createdAt: user.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  },
+
   changePassword: async (data: { currentPassword: string; newPassword: string }) => {
     await delay(600);
-    // In mock mode, always succeed
     return { updatedAt: new Date().toISOString() };
   },
 
-  /**
-   * Get user activity statistics
-   * GET /profile/activity
-   */
   getActivityStats: async () => {
     await delay(400);
-    // Return staff stats by default (mock mode)
+    const user = currentUser || MOCK_USERS.staff;
+    if (user.type === 'admin') {
+      return MOCK_ADMIN_ACTIVITY;
+    }
     return MOCK_STAFF_ACTIVITY;
   },
 };

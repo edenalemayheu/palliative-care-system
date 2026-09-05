@@ -5,8 +5,8 @@ export const createReferralSchema = z.object({
   referralDate: z.string().min(1, 'Referral date is required'),
   primaryDiagnosis: z.string().min(1, 'Primary diagnosis is required'),
   diseaseStage: z.enum(['Early', 'Advanced', 'EndStage']),
-  ppsScore: z.coerce.number().min(0).max(100),
-  kpsScore: z.coerce.number().min(0).max(100),
+ppsScore: z.coerce.number().min(0).max(100).optional().default(0),
+kpsScore: z.coerce.number().min(0).max(100).optional().default(0),
   currentSymptoms: z.object({
     pain: z.coerce.number().min(0).max(10),
     dyspnea: z.coerce.number().min(0).max(10),

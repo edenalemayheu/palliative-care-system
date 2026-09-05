@@ -15,7 +15,7 @@ const ProfilePage: React.FC = () => {
   const { data: stats, isLoading: statsLoading } = useActivityStats();
   const updateProfileMutation = useUpdateProfile();
   const changePasswordMutation = useChangePassword();
-
+console.log(profile)
   if (isLoading || statsLoading) return <PageLoader />;
   if (error || !profile) return <ErrorState onRetry={refetch} />;
 

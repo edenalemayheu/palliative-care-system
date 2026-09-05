@@ -28,16 +28,6 @@ const ReportsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-on-surface">Reports & Analytics</h1>
           <p className="text-sm text-text-secondary">System-wide statistics and trends</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Download size={14} />} loading={exportMutation.isPending}
-            onClick={() => exportMutation.mutate({ format: 'pdf' })}>
-            Export PDF
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download size={14} />} loading={exportMutation.isPending}
-            onClick={() => exportMutation.mutate({ format: 'excel' })}>
-            Export Excel
-          </Button>
-        </div>
       </div>
 
       {/* KPI strip */}

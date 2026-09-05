@@ -13,12 +13,14 @@ import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 interface SignatureSectionProps {
   visitId: string;
   visitDate: string;
+  teamMembers?: Array<{ role: string; name: string }>;
   onAllSigned?: () => void;
 }
 
 export const SignatureSection: React.FC<SignatureSectionProps> = ({
   visitId,
   visitDate,
+  teamMembers = [],
   onAllSigned,
 }) => {
   const [signingRole, setSigningRole] = useState<'Physician' | 'Nurse' | null>(null);
@@ -52,7 +54,7 @@ export const SignatureSection: React.FC<SignatureSectionProps> = ({
   };
 
   if (isLoading) {
-    return <div className="animate-pulse p-4 text-center">Loading signatures...</div>;
+    return <div className="animate-pulse text-center py-4">Loading signatures...</div>;
   }
 
   const isTeamLeaderSigned = signatures?.teamLeader !== null;
@@ -74,9 +76,14 @@ export const SignatureSection: React.FC<SignatureSectionProps> = ({
     );
   };
 
+  // Get team member names from the passed prop
+  const teamLeader = teamMembers.find(m => m.role === 'TeamLeader');
+  const physician = teamMembers.find(m => m.role === 'Physician');
+  const nurse = teamMembers.find(m => m.role === 'Nurse');
+
   return (
     <div className="space-y-4 border rounded-lg p-4 bg-surface-lowest">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="font-medium text-on-surface">Team Signatures</h3>
         {allSigned && (
           <Badge variant="success" className="flex items-center gap-1">
@@ -91,7 +98,7 @@ export const SignatureSection: React.FC<SignatureSectionProps> = ({
         <div>
           <p className="font-medium text-on-surface">Team Leader</p>
           <p className="text-sm text-text-secondary">
-            {signatures?.teamLeader?.staffName || 'Not assigned'}
+            {signatures?.teamLeader?.staffName || teamLeader?.name || 'Not assigned'}
           </p>
           {signatures?.teamLeader?.signedAt && (
             <p className="text-xs text-text-muted">
@@ -112,7 +119,7 @@ export const SignatureSection: React.FC<SignatureSectionProps> = ({
         <div>
           <p className="font-medium text-on-surface">Physician</p>
           <p className="text-sm text-text-secondary">
-            {signatures?.physician?.staffName || 'Not signed'}
+            {signatures?.physician?.staffName || physician?.name || 'Not signed'}
           </p>
           {signatures?.physician?.signedAt && (
             <p className="text-xs text-text-muted">
@@ -188,7 +195,7 @@ export const SignatureSection: React.FC<SignatureSectionProps> = ({
         <div>
           <p className="font-medium text-on-surface">Nurse</p>
           <p className="text-sm text-text-secondary">
-            {signatures?.nurse?.staffName || 'Not signed'}
+            {signatures?.nurse?.staffName || nurse?.name || 'Not signed'}
           </p>
           {signatures?.nurse?.signedAt && (
             <p className="text-xs text-text-muted">
