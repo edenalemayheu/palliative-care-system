@@ -16,12 +16,16 @@ import { BackButton } from '@/components/common/BackButton';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import { cn } from '@/lib/utils';
 import { PAIN_LOCATION_LABELS, SYMPTOM_LABELS, EDUCATION_LABELS, RED_FLAG_LABELS } from '@/constants';
+import { SignatureSection } from '@/components/visits/SignatureSection';
+import { useAuthStore } from '@/store/auth.store';
+
 
 // Collapsible section wrapper
 const Section: React.FC<{ title: string; defaultOpen?: boolean; children: React.ReactNode }> = ({
   title, defaultOpen = true, children
 }) => {
   const [open, setOpen] = useState(defaultOpen);
+  const [visitId, setVisitId] = useState<string | null>(null);
   return (
     <Card padding="none">
       <button

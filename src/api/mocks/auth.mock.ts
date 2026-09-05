@@ -49,6 +49,26 @@ export const MOCK_STAFF_PROFILE: StaffProfile = {
   createdAt: '2026-01-15T08:00:00Z',
 };
 
+// ── Mock Activity Stats ─────────────────────────────────────────
+const MOCK_STAFF_ACTIVITY = {
+  totalVisits: 45,
+  totalPatients: 23,
+  activePatients: 18,
+  todayVisits: 5,
+  lastLogin: new Date().toISOString(),
+  memberSince: '2026-01-15T08:00:00Z',
+};
+
+const MOCK_ADMIN_ACTIVITY = {
+  totalPatients: 234,
+  activePatients: 156,
+  dischargedPatients: 33,
+  pendingReferrals: 12,
+  pendingStaff: 5,
+  lastLogin: new Date().toISOString(),
+  memberSince: '2025-12-01T08:00:00Z',
+};
+
 export const mockAuthApi = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
     await delay(600);
@@ -110,8 +130,56 @@ export const mockAuthApi = {
     await delay(200);
   },
 
-  updateProfile: async (data: { name?: string; phone?: string }) => {
-    await delay(500);
-    return { ...MOCK_STAFF_PROFILE, ...data, updatedAt: new Date().toISOString() };
+updateProfile: async (data: { name?: string; phone?: string }) => {
+  await delay(500);
+  return {
+    id: MOCK_STAFF_PROFILE.id,
+    name: data.name || MOCK_STAFF_PROFILE.name,
+    email: MOCK_STAFF_PROFILE.email,
+    phone: data.phone || MOCK_STAFF_PROFILE.phone,
+    role: MOCK_STAFF_PROFILE.role,
+    type: 'staff' as const,
+    status: MOCK_STAFF_PROFILE.status,
+    isEmailVerified: MOCK_STAFF_PROFILE.isEmailVerified,
+    updatedAt: new Date().toISOString(),
+  };
+},
+
+  // ── NEW: Profile endpoints for the profile page ────────────────
+
+  /**
+   * Get the current user's full profile
+   * GET /profile
+   */
+  getProfile: async () => {
+    await delay(300);
+    return {
+      ...MOCK_USERS.staff,
+      phone: '+251911234567',
+      role: 'Physician' as const,
+      status: 'Active' as const,
+      isEmailVerified: true,
+      updatedAt: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Change user password
+   * PUT /profile/password
+   */
+  changePassword: async (data: { currentPassword: string; newPassword: string }) => {
+    await delay(600);
+    // In mock mode, always succeed
+    return { updatedAt: new Date().toISOString() };
+  },
+
+  /**
+   * Get user activity statistics
+   * GET /profile/activity
+   */
+  getActivityStats: async () => {
+    await delay(400);
+    // Return staff stats by default (mock mode)
+    return MOCK_STAFF_ACTIVITY;
   },
 };

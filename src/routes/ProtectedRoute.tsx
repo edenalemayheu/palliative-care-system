@@ -15,11 +15,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ role }) => {
   }
 
   if (role === 'admin' && user.type !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   if (role === 'staff' && user.type !== 'staff') {
-    return <Navigate to="/admin" replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <Outlet />;

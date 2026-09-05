@@ -90,10 +90,7 @@ const LandingPage: React.FC = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left */}
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary-light px-3 py-1 text-xs font-semibold text-primary mb-6">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-primary status-pulse" />
-                PALLIATIVE PATIENT MONITORING SYSTEM
-              </div>
+     
 
               <h1 className="text-4xl lg:text-5xl font-extrabold text-on-surface leading-tight tracking-tight mb-5">
                 Compassionate Care,{' '}

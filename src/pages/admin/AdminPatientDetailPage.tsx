@@ -17,6 +17,9 @@ import { PageLoader } from '@/components/common/LoadingSpinner';
 import { EmptyState, ErrorState } from '@/components/common/EmptyState';
 import { formatDate, cn } from '@/lib/utils';
 import { DISEASE_STAGE_LABELS as DSL, VISIT_TYPE_LABELS } from '@/constants';
+import { VisitEditModal } from '@/components/admin/VisitEditModal';
+import { useUpdateVisit, useVisitEditHistory } from '@/hooks/useAdmin';
+
 
 // ── Frontend-only history entry type ────────────────────────────
 interface HistoryEntry {
@@ -49,6 +52,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ entry, onSave, onClose }) =
   const [category, setCategory] = useState(entry?.category ?? 'Clinical Note');
   const [note, setNote] = useState(entry?.note ?? '');
   const [noteError, setNoteError] = useState('');
+const [editingVisit, setEditingVisit] = useState<string | null>(null);
 
   const handleSave = () => {
     if (!note.trim()) { setNoteError('Note cannot be empty.'); return; }

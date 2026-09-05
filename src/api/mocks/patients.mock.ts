@@ -11,7 +11,7 @@ export const MOCK_PATIENTS: Patient[] = [
     caregiverName: 'Emily Johnson', caregiverPhone: '+251911003003',
     primaryDiagnosis: 'Stage IV Breast Cancer', secondaryDiagnoses: ['Metastatic to bone', 'Anaemia'],
     diseaseStage: 'Advanced', comorbidities: ['Hypertension', 'Diabetes'],
-    estimatedPrognosis: 'Months', status: 'Active', currentLocation: 'Home',
+    estimatedPrognosis: 'Months', status: 'Active', currentLocation: 'ReferredHospital',
     registeredBy: 'staff-001', createdAt: '2026-07-10T08:00:00Z',
   },
   {
