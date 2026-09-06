@@ -6,9 +6,9 @@ import type { LoginRequest, RegisterRequest, UpdateStaffProfileRequest } from '@
 import { useToast } from '@/context/ToastContext';
 
 export function useRegister() {
-  // Registration success/error is handled inline by RegisterPage
-  // (it shows a full success state card) so we don't add a toast here.
-  return useMutation({ mutationFn: (data: RegisterRequest) => authApi.register(data) });
+  return useMutation({ 
+    mutationFn: (data: RegisterRequest) => authApi.register(data) 
+  });
 }
 
 export function useVerifyEmail() {
@@ -31,13 +31,19 @@ export function useResendVerification() {
 export function useLogin() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
-  // Login errors are shown inline in the form; no toast needed on failure.
+  const { toast } = useToast();
+  
   return useMutation({
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: (response) => {
       setAuth(response.user, response.token);
+      toast.success('Login successful', `Welcome back, ${response.user.name}!`);
       if (response.user.type === 'admin') navigate('/admin');
       else navigate('/dashboard');
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Invalid email or password';
+      // Toast is shown inline in the login form
     },
   });
 }
@@ -46,8 +52,13 @@ export function useLogout() {
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   return useMutation({
     mutationFn: () => authApi.logout(),
+    onSuccess: () => {
+      toast.info('Logged out successfully');
+    },
     onSettled: () => {
       logout();
       queryClient.clear();
@@ -58,12 +69,22 @@ export function useLogout() {
 
 export function useCurrentUser() {
   const token = useAuthStore((s) => s.token);
+  const setInitialized = useAuthStore((s) => s.setInitialized);
+  
   return useQuery({
     queryKey: ['auth', 'me'],
     queryFn: () => authApi.getCurrentUser(),
     enabled: !!token,
     retry: false,
     staleTime: 5 * 60 * 1000,
+    onSuccess: () => {
+      setInitialized();
+    },
+    onError: () => {
+      // If token is invalid, clear auth state
+      useAuthStore.getState().logout();
+      setInitialized();
+    },
   });
 }
 
@@ -81,6 +102,7 @@ export function useUpdateStaffProfile() {
   const queryClient = useQueryClient();
   const updateUser = useAuthStore((s) => s.updateUser);
   const { toast } = useToast();
+  
   return useMutation({
     mutationFn: (data: UpdateStaffProfileRequest) => authApi.updateProfile(data),
     onSuccess: (response) => {
@@ -89,8 +111,9 @@ export function useUpdateStaffProfile() {
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       toast.success('Profile updated successfully.');
     },
-    onError: () => {
-      toast.error('Failed to update profile. Please try again.');
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to update profile.';
+      toast.error('Update failed', message);
     },
   });
 }

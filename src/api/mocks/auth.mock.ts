@@ -23,8 +23,25 @@ export const MOCK_USERS = {
   } satisfies User,
 };
 
-// ── Track current user for mock API ──────────────────────────────
-let currentUser: User | null = null;
+// ── Persist mock user in localStorage ──────────────────────────
+const MOCK_USER_STORAGE_KEY = 'mock-current-user';
+
+const getCurrentMockUser = (): User | null => {
+  try {
+    const stored = localStorage.getItem(MOCK_USER_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+};
+
+const setCurrentMockUser = (user: User | null): void => {
+  if (user) {
+    localStorage.setItem(MOCK_USER_STORAGE_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(MOCK_USER_STORAGE_KEY);
+  }
+};
 
 // Additional staff for admin panel fixtures
 export const MOCK_STAFF_LIST = [
@@ -76,11 +93,11 @@ export const mockAuthApi = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
     await delay(600);
     if (email === 'john@gmail.com' && password === 'abcdefghi') {
-      currentUser = MOCK_USERS.staff;
+      setCurrentMockUser(MOCK_USERS.staff);
       return { token: 'mock-staff-token-xyz123', user: MOCK_USERS.staff };
     }
     if (email === 'admin@example.com' && password === 'admin123') {
-      currentUser = MOCK_USERS.admin;
+      setCurrentMockUser(MOCK_USERS.admin);
       return { token: 'mock-admin-token-abc456', user: MOCK_USERS.admin };
     }
     const err = new Error('Invalid email or password') as Error & { response?: { data?: { message: string }; status: number } };
@@ -123,38 +140,45 @@ export const mockAuthApi = {
 
   getCurrentUser: async (): Promise<User> => {
     await delay(300);
-    // Return the currently logged-in user, or staff as fallback
-    return currentUser || MOCK_USERS.staff;
+    const user = getCurrentMockUser() || MOCK_USERS.staff;
+    return user;
   },
 
   getStaffProfile: async (): Promise<StaffProfile> => {
     await delay(300);
-    // If admin is logged in, return admin profile as staff (fallback)
-    if (currentUser?.type === 'admin') {
+    const user = getCurrentMockUser() || MOCK_USERS.staff;
+    // If admin is logged in, return admin as staff (fallback)
+    if (user.type === 'admin') {
       return {
-        id: currentUser.id,
-        name: currentUser.name,
-        email: currentUser.email,
+        id: user.id,
+        name: user.name,
+        email: user.email,
         phone: '+251900000000',
         role: 'Physician',
         status: 'Active',
         isEmailVerified: true,
         assignedPatientsCount: 0,
         todayVisitsCount: 0,
-        createdAt: currentUser.createdAt || new Date().toISOString(),
+        createdAt: user.createdAt || new Date().toISOString(),
       } as StaffProfile;
     }
-    return MOCK_STAFF_PROFILE;
+    return {
+      ...MOCK_STAFF_PROFILE,
+      name: user.name,
+      email: user.email,
+      phone: (user as any).phone || MOCK_STAFF_PROFILE.phone,
+      role: (user as any).role || MOCK_STAFF_PROFILE.role,
+    };
   },
 
   logout: async (): Promise<void> => {
     await delay(200);
-    currentUser = null;
+    setCurrentMockUser(null);
   },
 
   updateProfile: async (data: { name?: string; phone?: string }) => {
     await delay(500);
-    const user = currentUser || MOCK_USERS.staff;
+    const user = getCurrentMockUser() || MOCK_USERS.staff;
     return {
       id: user.id,
       name: data.name || user.name,
@@ -171,7 +195,8 @@ export const mockAuthApi = {
   // ── Profile endpoints ──────────────────────────────────────────
   getProfile: async () => {
     await delay(300);
-    const user = currentUser || MOCK_USERS.staff;
+    const user = getCurrentMockUser() || MOCK_USERS.staff;
+
     if (user.type === 'admin') {
       return {
         id: user.id,
@@ -182,6 +207,7 @@ export const mockAuthApi = {
         updatedAt: new Date().toISOString(),
       };
     }
+
     return {
       id: user.id,
       name: user.name,
@@ -198,12 +224,13 @@ export const mockAuthApi = {
 
   changePassword: async (data: { currentPassword: string; newPassword: string }) => {
     await delay(600);
+    // In mock mode, always succeed
     return { updatedAt: new Date().toISOString() };
   },
 
   getActivityStats: async () => {
     await delay(400);
-    const user = currentUser || MOCK_USERS.staff;
+    const user = getCurrentMockUser() || MOCK_USERS.staff;
     if (user.type === 'admin') {
       return MOCK_ADMIN_ACTIVITY;
     }
