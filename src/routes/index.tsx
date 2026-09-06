@@ -3,17 +3,23 @@ import { Routes, Route } from 'react-router-dom';
 import { PageLoader } from '@/components/common/LoadingSpinner';
 import PublicRoute from './PublicRoute';
 import ProtectedRoute from './ProtectedRoute';
-import { PublicLayout, AuthLayout, DashboardLayout } from '@/components/layouts';
+import { PublicLayout, AuthLayout, DashboardLayout, PrintLayout } from '@/components/layouts';
 
-// Lazy-load every page
+// ── Lazy-load every page ─────────────────────────────────────────
+
+// Public
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage'));
 
 // Auth
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
 const VerifyEmailPage = lazy(() => import('@/pages/auth/VerifyEmailPage'));
 const ResendVerificationPage = lazy(() => import('@/pages/auth/ResendVerificationPage'));
+
+// Profile
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 
 // Admin
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
@@ -26,6 +32,7 @@ const SettingsPage = lazy(() => import('@/pages/admin/SettingsPage'));
 
 // Staff
 const DashboardPage = lazy(() => import('@/pages/staff/DashboardPage'));
+const VisitsListPage = lazy(() => import('@/pages/staff/VisitsListPage'));
 const PatientListPage = lazy(() => import('@/pages/staff/PatientListPage'));
 const PatientRegistrationPage = lazy(() => import('@/pages/staff/PatientRegistrationPage'));
 const PatientDetailPage = lazy(() => import('@/pages/staff/PatientDetailPage'));
@@ -42,16 +49,21 @@ const ReferralDetailPage = lazy(() => import('@/pages/staff/ReferralDetailPage')
 const RecordAdmissionPage = lazy(() => import('@/pages/staff/RecordAdmissionPage'));
 const AdmissionDetailPage = lazy(() => import('@/pages/staff/AdmissionDetailPage'));
 
+// Print
+const PatientPrintPage = lazy(() => import('@/pages/PatientPrintPage'));
+
+// ── Suspense wrapper ─────────────────────────────────────────────
 const S = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<PageLoader />}>{children}</Suspense>
 );
 
+// ── Routes ────────────────────────────────────────────────────────
 const AppRoutes: React.FC = () => (
   <Routes>
-    {/* Public landing */}
+    {/* ── Public Landing ── */}
     <Route path="/" element={<S><LandingPage /></S>} />
 
-    {/* Auth pages — redirect away if already logged in */}
+    {/* ── Auth Pages (redirect if already logged in) ── */}
     <Route element={<PublicRoute />}>
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<S><LoginPage /></S>} />
@@ -61,18 +73,23 @@ const AppRoutes: React.FC = () => (
       <Route path="/resend-verification" element={<S><ResendVerificationPage /></S>} />
     </Route>
 
-    {/* Admin-only */}
+    {/* ── Unauthorized (public) ── */}
+    <Route path="/unauthorized" element={<S><UnauthorizedPage /></S>} />
+
+    {/* ── Admin Routes ── */}
     <Route element={<ProtectedRoute role="admin" />}>
       <Route element={<DashboardLayout />}>
         <Route path="/admin" element={<S><AdminDashboardPage /></S>} />
         <Route path="/admin/patients" element={<S><AdminPatientListPage /></S>} />
         <Route path="/admin/patients/:patientId" element={<S><AdminPatientDetailPage /></S>} />
-        {/* Admin sub-record detail routes — reuse staff detail pages (read-only view) */}
+        
+        {/* Admin sub-record detail routes (reuse staff pages) */}
         <Route path="/admin/patients/:id/visits/:visitId" element={<S><VisitDetailPage /></S>} />
         <Route path="/admin/patients/:id/medications/:medicationId" element={<S><MedicationDetailPage /></S>} />
         <Route path="/admin/patients/:id/labs/:labId" element={<S><LabDetailPage /></S>} />
         <Route path="/admin/patients/:id/referrals/:referralId" element={<S><ReferralDetailPage /></S>} />
         <Route path="/admin/patients/:id/admissions/:admissionId" element={<S><AdmissionDetailPage /></S>} />
+        
         <Route path="/admin/staff" element={<S><StaffManagementPage /></S>} />
         <Route path="/admin/referrals" element={<S><ReferralManagementPage /></S>} />
         <Route path="/admin/reports" element={<S><ReportsPage /></S>} />
@@ -80,29 +97,57 @@ const AppRoutes: React.FC = () => (
       </Route>
     </Route>
 
-    {/* Staff-only */}
+    {/* ── Staff Routes ── */}
     <Route element={<ProtectedRoute role="staff" />}>
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<S><DashboardPage /></S>} />
+        
+        {/* Patient management */}
         <Route path="/patients" element={<S><PatientListPage /></S>} />
         <Route path="/patients/new" element={<S><PatientRegistrationPage /></S>} />
         <Route path="/patients/:id" element={<S><PatientDetailPage /></S>} />
         <Route path="/patients/:id/summary" element={<S><PatientSummaryPage /></S>} />
         <Route path="/patients/:id/progress" element={<S><PatientProgressPage /></S>} />
+        
+        {/* Visits */}
+        <Route path="/visits" element={<S><VisitsListPage /></S>} />
         <Route path="/patients/:id/visits" element={<S><RecordVisitPage /></S>} />
         <Route path="/patients/:id/visits/:visitId" element={<S><VisitDetailPage /></S>} />
+        
+        {/* Medications */}
         <Route path="/patients/:id/medications" element={<S><OrderMedicationPage /></S>} />
         <Route path="/patients/:id/medications/:medicationId" element={<S><MedicationDetailPage /></S>} />
+        
+        {/* Labs */}
         <Route path="/patients/:id/labs" element={<S><OrderLabPage /></S>} />
         <Route path="/patients/:id/labs/:labId" element={<S><LabDetailPage /></S>} />
+        
+        {/* Referrals */}
         <Route path="/patients/:id/referrals" element={<S><RequestReferralPage /></S>} />
         <Route path="/patients/:id/referrals/:referralId" element={<S><ReferralDetailPage /></S>} />
+        
+        {/* Admissions */}
         <Route path="/patients/:id/admissions" element={<S><RecordAdmissionPage /></S>} />
         <Route path="/patients/:id/admissions/:admissionId" element={<S><AdmissionDetailPage /></S>} />
       </Route>
     </Route>
 
-    {/* 404 */}
+    {/* ── Profile Route (accessible by both admin AND staff) ── */}
+    <Route element={<ProtectedRoute />}>
+      <Route element={<DashboardLayout />}>
+        <Route path="/profile" element={<S><ProfilePage /></S>} />
+      </Route>
+    </Route>
+
+    {/* ── Print Routes (minimal layout) ── */}
+    <Route element={<ProtectedRoute />}>
+      <Route element={<PrintLayout />}>
+        <Route path="/patients/:id/print" element={<S><PatientPrintPage /></S>} />
+        <Route path="/admin/patients/:id/print" element={<S><PatientPrintPage /></S>} />
+      </Route>
+    </Route>
+
+    {/* ── 404 Not Found ── */}
     <Route path="*" element={<S><NotFoundPage /></S>} />
   </Routes>
 );

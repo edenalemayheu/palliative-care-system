@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, UserCheck, GitBranch,
   BarChart3, Settings, Heart, LogOut, Menu, X,
-  ChevronRight, Bell, ClipboardList,
+  ChevronRight, Bell, ClipboardList, UserCircle,
 } from 'lucide-react';
 import { cn, getInitials } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
@@ -31,19 +31,15 @@ const StethoscopeIcon: React.FC<{ className?: string }> = ({ className }) => (
     strokeLinejoin="round"
     aria-hidden="true"
   >
-    {/* earpieces */}
     <path d="M6 3v5" />
     <path d="M10 3v5" />
-    {/* headset bridge */}
     <path d="M6 8a4 4 0 0 0 4 4" />
-    {/* tubing down */}
     <path d="M10 12v4a4 4 0 0 0 4 4" />
-    {/* chest piece circle */}
     <circle cx="18" cy="19" r="2" />
   </svg>
 );
 
-// ── Heartbeat line (simple, no labels) ──────────────────────────
+// ── Heartbeat line ──────────────────────────────────────────────
 const HeartbeatAccent: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     viewBox="0 0 120 20"
@@ -72,9 +68,17 @@ const adminNavItems = (pendingStaff = 0, pendingReferrals = 0): NavItem[] => [
 // ── Staff nav items ──────────────────────────────────────────────
 const staffNavItems = (): NavItem[] => [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} />, end: true },
-  { label: 'Patients', href: '/patients', icon: <Users size={18} /> },
-  { label: 'Visits', href: '/patients', icon: <ClipboardList size={18} /> },
+  { label: 'Patients', href: '/patients', icon: <Users size={18} />, end: false },
+  { label: 'Visits', href: '/visits', icon: <ClipboardList size={18} />, end: false },
 ];
+
+// ── Profile nav item (shared) ────────────────────────────────────
+const profileNavItem = (): NavItem => ({
+  label: 'Profile',
+  href: '/profile',
+  icon: <UserCircle size={18} />,
+  end: true,
+});
 
 interface SidebarProps {
   pendingStaff?: number;
@@ -96,7 +100,6 @@ const LogoutDialog: React.FC<LogoutDialogProps> = ({ onConfirm, onCancel, isPend
     aria-labelledby="logout-dialog-title"
   >
     <div className="w-full max-w-sm bg-surface-lowest rounded-2xl border border-border-base shadow-xl p-6">
-      {/* Icon */}
       <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-error-bg text-error mb-4">
         <LogOut size={20} />
       </div>
@@ -142,9 +145,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
   const logoutMutation = useLogout();
 
   const isAdmin = user?.type === 'admin';
+  
+  // Build nav items with profile at the bottom
   const navItems = isAdmin
-    ? adminNavItems(pendingStaff, pendingReferrals)
-    : staffNavItems();
+    ? [...adminNavItems(pendingStaff, pendingReferrals)]
+    : [...staffNavItems()];
 
   const handleLogoutConfirm = () => {
     logoutMutation.mutate(undefined, {
@@ -162,7 +167,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
           </div>
           <span className="text-sm font-bold text-on-surface leading-tight">{APP_NAME}</span>
         </div>
-        {/* Medical accent strip: stethoscope + heartbeat line */}
         <div className="flex items-center gap-2 px-1">
           <StethoscopeIcon className="h-4 w-4 flex-shrink-0 text-primary/40" />
           <HeartbeatAccent className="flex-1 h-4 text-primary/25" />
@@ -206,7 +210,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
         ))}
       </nav>
 
-      {/* ── User info + logout ── sticky footer, never scrolls away ── */}
+      {/* ── Profile link (separate from main nav) ── */}
+      <div className="flex-shrink-0 px-3 pb-1">
+        <NavLink
+          to="/profile"
+          end
+          onClick={() => setMobileOpen(false)}
+          className={({ isActive }) =>
+            cn(
+              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
+              isActive
+                ? 'bg-primary-light text-primary'
+                : 'text-on-surface-variant hover:bg-surface-low hover:text-on-surface'
+            )
+          }
+        >
+          {({ isActive }) => (
+            <>
+              <span className={cn('flex-shrink-0 transition-colors', isActive ? 'text-primary' : 'text-text-muted group-hover:text-on-surface')}>
+                <UserCircle size={18} />
+              </span>
+              <span className="flex-1">Profile</span>
+            </>
+          )}
+        </NavLink>
+      </div>
+
+      {/* ── User info + logout ── sticky footer ── */}
       <div className="flex-shrink-0 border-t border-border-base p-3 bg-surface-lowest">
         <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-surface-low transition-colors">
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary-light text-primary text-xs font-bold">
@@ -271,6 +301,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
         </button>
         <SidebarContent />
       </aside>
+
       {/* Logout confirmation dialog */}
       {showLogoutDialog && (
         <LogoutDialog

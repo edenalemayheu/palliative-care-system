@@ -6,9 +6,11 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  isInitializing: boolean;  // NEW: Track auth initialization
   setAuth: (user: User, token: string) => void;
   updateUser: (user: Partial<User>) => void;
   logout: () => void;
+  setInitialized: () => void;  // NEW: Mark initialization complete
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -17,9 +19,10 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      isInitializing: true,  // Start as initializing
 
       setAuth: (user, token) =>
-        set({ user, token, isAuthenticated: true }),
+        set({ user, token, isAuthenticated: true, isInitializing: false }),
 
       updateUser: (updatedFields) => {
         const current = get().user;
@@ -28,7 +31,14 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => set({ user: null, token: null, isAuthenticated: false }),
+      logout: () => set({ 
+        user: null, 
+        token: null, 
+        isAuthenticated: false,
+        isInitializing: false 
+      }),
+
+      setInitialized: () => set({ isInitializing: false }),
     }),
     {
       name: 'auth-storage',
@@ -36,6 +46,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
+        // Don't persist isInitializing
       }),
     }
   )

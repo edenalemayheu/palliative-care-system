@@ -10,6 +10,32 @@ export function useDashboardStats() {
     refetchInterval: 30000,
   });
 }
+// Add to useAdmin.ts
+export function useUpdateVisit() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ visitId, data }: { visitId: string; data: any }) =>
+      adminApi.updateVisit(visitId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'patients'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'visits', variables.visitId] });
+      toast.success('Visit updated successfully.');
+    },
+    onError: (error: any) => {
+      toast.error('Update failed', error.response?.data?.message || 'Failed to update visit.');
+    },
+  });
+}
+
+export function useVisitEditHistory(visitId: string) {
+  return useQuery({
+    queryKey: ['admin', 'visits', visitId, 'history'],
+    queryFn: () => adminApi.getVisitEditHistory(visitId),
+    enabled: !!visitId,
+  });
+}
 
 export function useNotifications(params?: { limit?: number; read?: boolean }) {
   return useQuery({

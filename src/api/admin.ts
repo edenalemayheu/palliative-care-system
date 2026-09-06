@@ -74,4 +74,11 @@ export const adminApi = {
     if (USE_MOCK) return mockAdminApi.exportReport(format);
     return apiClient.get(`/admin/reports/export?format=${format}`, { responseType: 'blob' }).then((r) => r.data);
   },
+updateVisit: (visitId: string, data: any): Promise<any> => {
+  return apiClient.put(`/admin/visits/${visitId}`, data).then((r) => r.data);
+},
+
+getVisitEditHistory: (visitId: string): Promise<any> => {
+  return apiClient.get(`/admin/visits/${visitId}/history`).then((r) => r.data);
+},
 };
