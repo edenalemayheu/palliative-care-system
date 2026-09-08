@@ -31,3 +31,37 @@ export interface LabListResponse {
   limit: number;
   total: number;
 }
+export interface ImagingOrderData {
+  modality: string;
+  bodyRegion: string;
+  specificSite?: string;
+  laterality: string;
+  protocol?: string;
+  clinicalQuestion?: string;
+  contrast: string;
+  priority: string;
+  reasonForUrgency?: string;
+  pregnancyStatus: string;
+  implantedDevice: boolean;
+  deviceDetails?: string;
+  metallicForeignBody: string;
+  allergies?: string;
+  renalFunction?: string;
+  creatinine?: string;
+  egfr?: string;
+  preparation: string[];
+  preparationInstructions?: string;
+  clinicianName?: string;
+  clinicianDepartment?: string;
+  clinicianContact?: string;
+}
+
+export interface ImagingReportData {
+  reportDate: string;
+  findings: string;
+  impression: string;
+  recommendations?: string;
+  reportingPhysician: string;
+  imageQuality: 'Diagnostic' | 'Limited' | 'NonDiagnostic' | 'RepeatRequired';
+  notes?: string;
+}

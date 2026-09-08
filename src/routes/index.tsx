@@ -48,6 +48,8 @@ const RequestReferralPage = lazy(() => import('@/pages/staff/RequestReferralPage
 const ReferralDetailPage = lazy(() => import('@/pages/staff/ReferralDetailPage'));
 const RecordAdmissionPage = lazy(() => import('@/pages/staff/RecordAdmissionPage'));
 const AdmissionDetailPage = lazy(() => import('@/pages/staff/AdmissionDetailPage'));
+const OrderImagingPage = lazy(() => import('@/pages/staff/OrderImagingPage'));
+
 
 // Print
 const PatientPrintPage = lazy(() => import('@/pages/PatientPrintPage'));
@@ -121,6 +123,7 @@ const AppRoutes: React.FC = () => (
         {/* Labs */}
         <Route path="/patients/:id/labs" element={<S><OrderLabPage /></S>} />
         <Route path="/patients/:id/labs/:labId" element={<S><LabDetailPage /></S>} />
+        <Route path="/patients/:id/imaging" element={<S><OrderImagingPage /></S>} />
         
         {/* Referrals */}
         <Route path="/patients/:id/referrals" element={<S><RequestReferralPage /></S>} />
