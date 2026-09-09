@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ClipboardList, Pill, FlaskConical, GitBranch, Building2, 
   BarChart2, FileText, Home, Hospital, Phone, MapPin, 
   Plus, ChevronRight as ChevronRightIcon, Printer, 
-  Camera, Microscope 
+  Camera, Microscope, NotebookPen
 } from 'lucide-react';
 import { usePatient } from '@/hooks/usePatients';
 import { usePatientVisits } from '@/hooks/useVisits';
@@ -12,6 +12,7 @@ import { usePatientMedications } from '@/hooks/useMedications';
 import { usePatientLabs } from '@/hooks/useLabs';
 import { usePatientReferrals } from '@/hooks/useReferrals';
 import { usePatientAdmissions } from '@/hooks/useAdmissions';
+import { useProgressNotesStore } from '@/hooks/useProgressNotes';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -35,15 +36,30 @@ interface RecordType {
   color?: string;
 }
 
-const RECORD_TYPES: RecordType[] = [
-  {
+/** The visit-type entry is conditional: Home patients get a Home Visit Record,
+ *  hospitalised patients get a Patient Progress Note instead. */
+function getVisitRecordType(currentLocation: 'Home' | 'ReferredHospital'): RecordType {
+  if (currentLocation === 'ReferredHospital') {
+    return {
+      key: 'progress-note',
+      label: 'Patient Progress Note',
+      description: 'Record a clinical progress note for a hospitalised or facility-based patient.',
+      icon: <NotebookPen size={20} />,
+      route: (id) => `/patients/${id}/progress-note/new`,
+      color: 'text-teal-600',
+    };
+  }
+  return {
     key: 'visit',
     label: 'Home Visit Record',
     description: 'Record a home visit, vitals, pain assessment, and care observations.',
     icon: <ClipboardList size={20} />,
     route: (id) => `/patients/${id}/visits`,
     color: 'text-blue-600',
-  },
+  };
+}
+
+const STATIC_RECORD_TYPES: RecordType[] = [
   {
     key: 'medication',
     label: 'Medication Order',
@@ -90,14 +106,16 @@ const RECORD_TYPES: RecordType[] = [
 interface AddRecordModalProps {
   patientId: string;
   patientName: string;
+  currentLocation: 'Home' | 'ReferredHospital';
   onClose: () => void;
   onSelect: (route: string) => void;
 }
 
-const AddRecordModal: React.FC<AddRecordModalProps> = ({ patientId, patientName, onClose, onSelect }) => {
-  // Group record types for better organization
-  const clinicalRecords = RECORD_TYPES.filter(r => ['visit', 'medication', 'lab', 'imaging'].includes(r.key));
-  const referralRecords = RECORD_TYPES.filter(r => ['referral', 'admission'].includes(r.key));
+const AddRecordModal: React.FC<AddRecordModalProps> = ({ patientId, patientName, currentLocation, onClose, onSelect }) => {
+  // Build the full list: conditional visit/progress-note + static remainder
+  const allTypes = [getVisitRecordType(currentLocation), ...STATIC_RECORD_TYPES];
+  const clinicalRecords = allTypes.filter(r => ['visit', 'progress-note', 'medication', 'lab', 'imaging'].includes(r.key));
+  const referralRecords = allTypes.filter(r => ['referral', 'admission'].includes(r.key));
 
   return (
     <div
@@ -186,17 +204,38 @@ const RecordTypeItem: React.FC<{
 };
 
 // ── Tabs ──────────────────────────────────────────────────────────
-const tabs = ['Visits', 'Medications', 'Labs', 'Imaging', 'Referrals', 'Admissions'] as const;
+const tabs = ['Visits', 'Progress Notes', 'Medications', 'Labs', 'Imaging', 'Referrals', 'Admissions'] as const;
 type Tab = typeof tabs[number];
 
 // ── Main Component ──────────────────────────────────────────────
 const PatientDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('Visits');
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+
+  // Progress notes — select the raw notes array (stable reference), then filter
+  // with useMemo so the derived array only changes when notes or id changes.
+  // Do NOT call getNotesByPatient() inside a selector — .filter() creates a new
+  // array every call, which fools Zustand's equality check into re-rendering forever.
+  const allProgressNotes = useProgressNotesStore((s) => s.notes);
+  const progressNotes = useMemo(
+    () => allProgressNotes.filter((n) => n.patientId === (id ?? '')),
+    [allProgressNotes, id],
+  );
+
+  // If returning from the progress note form with a saved note, show Progress Notes tab
+  const locationState = location.state as { savedProgressNote?: boolean } | null;
+  React.useEffect(() => {
+    if (locationState?.savedProgressNote) {
+      setActiveTab('Progress Notes');
+      // Clear the flag so re-renders don't re-trigger
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: patient, isLoading, error, refetch } = usePatient(id!);
   const { data: visitsData } = usePatientVisits(id!);
@@ -230,6 +269,7 @@ const PatientDetailPage: React.FC = () => {
 
   const tabCounts: Record<Tab, number> = {
     Visits: visitsData?.total ?? 0,
+    'Progress Notes': progressNotes.length,
     Medications: medsData?.total ?? 0,
     Labs: labOrders.length,
     Imaging: imagingOrders.length,
@@ -372,6 +412,53 @@ const PatientDetailPage: React.FC = () => {
         </div>
 
         <div className="p-5">
+          {/* ── Progress Notes Tab ── */}
+          {activeTab === 'Progress Notes' && (
+            progressNotes.length ? (
+              <div className="space-y-3">
+                {progressNotes.map((note) => (
+                  <div key={note.id} className="border border-border-base rounded-xl p-4 hover:bg-surface-low/40 transition-colors">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                          <Badge variant="primary">
+                            <NotebookPen size={11} className="mr-0.5" />
+                            Progress Note
+                          </Badge>
+                          <span className="text-xs text-text-muted">{formatDate(note.date)} {note.time && `· ${note.time}`}</span>
+                          {note.attendingClinician && (
+                            <span className="text-xs text-text-muted">· {note.attendingClinician}</span>
+                          )}
+                        </div>
+                        {note.generalCondition && (
+                          <p className="text-sm text-on-surface">
+                            <span className="text-text-muted">Condition:</span>{' '}
+                            <span className="font-medium">{note.generalCondition}</span>
+                            {note.overallAssessment && (
+                              <span className="text-text-secondary"> — {note.overallAssessment}</span>
+                            )}
+                          </p>
+                        )}
+                        {note.soapSubjective && (
+                          <p className="text-xs text-text-muted mt-1 truncate max-w-lg">
+                            S: {note.soapSubjective}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No progress notes recorded"
+                description="Progress notes are recorded for hospitalised patients. Record the first one."
+                actionLabel="Record Progress Note"
+                onAction={() => navigate(`/patients/${id}/progress-note/new`)}
+              />
+            )
+          )}
+
           {/* ── Visits Tab ── */}
           {activeTab === 'Visits' && (
             visitsData?.items?.length ? (
@@ -548,6 +635,7 @@ const PatientDetailPage: React.FC = () => {
         <AddRecordModal
           patientId={id!}
           patientName={`${patient.firstName} ${patient.lastName}`}
+          currentLocation={patient.currentLocation}
           onClose={() => setShowAddRecord(false)}
           onSelect={handleAddRecord}
         />
