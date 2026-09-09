@@ -25,6 +25,7 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
 const AdminPatientListPage = lazy(() => import('@/pages/admin/AdminPatientListPage'));
 const AdminPatientDetailPage = lazy(() => import('@/pages/admin/AdminPatientDetailPage'));
+const DischargePatientPage = lazy(() => import('@/pages/admin/DischargePatientPage'));
 const StaffManagementPage = lazy(() => import('@/pages/admin/StaffManagementPage'));
 const ReferralManagementPage = lazy(() => import('@/pages/admin/ReferralManagementPage'));
 const ReportsPage = lazy(() => import('@/pages/admin/ReportsPage'));
@@ -49,6 +50,7 @@ const ReferralDetailPage = lazy(() => import('@/pages/staff/ReferralDetailPage')
 const RecordAdmissionPage = lazy(() => import('@/pages/staff/RecordAdmissionPage'));
 const AdmissionDetailPage = lazy(() => import('@/pages/staff/AdmissionDetailPage'));
 const OrderImagingPage = lazy(() => import('@/pages/staff/OrderImagingPage'));
+const RecordProgressNotePage = lazy(() => import('@/pages/staff/RecordProgressNotePage'));
 
 
 // Print
@@ -84,6 +86,7 @@ const AppRoutes: React.FC = () => (
         <Route path="/admin" element={<S><AdminDashboardPage /></S>} />
         <Route path="/admin/patients" element={<S><AdminPatientListPage /></S>} />
         <Route path="/admin/patients/:patientId" element={<S><AdminPatientDetailPage /></S>} />
+        <Route path="/admin/patients/:patientId/discharge" element={<S><DischargePatientPage /></S>} />
         
         {/* Admin sub-record detail routes (reuse staff pages) */}
         <Route path="/admin/patients/:id/visits/:visitId" element={<S><VisitDetailPage /></S>} />
@@ -132,6 +135,9 @@ const AppRoutes: React.FC = () => (
         {/* Admissions */}
         <Route path="/patients/:id/admissions" element={<S><RecordAdmissionPage /></S>} />
         <Route path="/patients/:id/admissions/:admissionId" element={<S><AdmissionDetailPage /></S>} />
+
+        {/* Progress Notes */}
+        <Route path="/patients/:id/progress-note/new" element={<S><RecordProgressNotePage /></S>} />
       </Route>
     </Route>
 
