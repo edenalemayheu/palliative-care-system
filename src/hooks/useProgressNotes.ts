@@ -1,14 +1,15 @@
 /**
  * useProgressNotes
  * ─────────────────
- * Frontend-only Zustand store for Patient Progress Notes.
- * No backend call — notes live in memory for the session.
- * Follows the same pattern as the auth store (zustand + optional persist).
+ * Hook for managing Patient Progress Notes with API integration.
+ * Uses React Query for data fetching and caching.
  */
 
-import { create } from 'zustand';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { progressNotesApi } from '@/api/progress-notes';
+import { useToast } from '@/context/ToastContext';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────
 
 export interface ProgressNoteMedRow {
   medicationTreatment: string;
@@ -203,34 +204,83 @@ export interface ProgressNote {
   facilityStamp: string;
 }
 
-// ── Store ──────────────────────────────────────────────────────────────────────
+// ── React Query Hooks ─────────────────────────────────────────────
 
-interface ProgressNotesState {
-  notes: ProgressNote[];
-  addNote: (note: ProgressNote) => void;
-  getNotesByPatient: (patientId: string) => ProgressNote[];
+export function useProgressNotes(patientId: string, params?: { page?: number; limit?: number }) {
+  return useQuery({
+    queryKey: ['patients', patientId, 'progress-notes', params],
+    queryFn: () => progressNotesApi.getByPatient(patientId, params),
+    enabled: !!patientId,
+  });
 }
 
-export const useProgressNotesStore = create<ProgressNotesState>((set, get) => ({
-  notes: [],
+export function useProgressNote(patientId: string, noteId: string) {
+  return useQuery({
+    queryKey: ['patients', patientId, 'progress-notes', noteId],
+    queryFn: () => progressNotesApi.getById(patientId, noteId),
+    enabled: !!patientId && !!noteId,
+  });
+}
 
-  addNote: (note) =>
-    set((state) => ({ notes: [note, ...state.notes] })),
+export function useCreateProgressNote(patientId: string) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // NOTE: call this outside a component selector to avoid infinite re-renders.
-  // Inside components, select `notes` directly and filter with useMemo.
-  getNotesByPatient: (patientId) =>
-    get().notes.filter((n) => n.patientId === patientId),
-}));
+  return useMutation({
+    mutationFn: (data: Omit<ProgressNote, 'id' | 'patientId' | 'createdAt'>) =>
+      progressNotesApi.create(patientId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients', patientId, 'progress-notes'] });
+      toast.success('Progress note saved successfully.');
+    },
+    onError: () => {
+      toast.error('Failed to save progress note. Please try again.');
+    },
+  });
+}
 
-// ── Helper: build a blank note pre-filled from patient data ───────────────────
+export function useUpdateProgressNote(patientId: string) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ noteId, data }: { noteId: string; data: Partial<Omit<ProgressNote, 'id' | 'patientId' | 'createdAt'>> }) =>
+      progressNotesApi.update(patientId, noteId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['patients', patientId, 'progress-notes'] });
+      queryClient.invalidateQueries({ queryKey: ['patients', patientId, 'progress-notes', variables.noteId] });
+      toast.success('Progress note updated successfully.');
+    },
+    onError: () => {
+      toast.error('Failed to update progress note. Please try again.');
+    },
+  });
+}
+
+export function useDeleteProgressNote(patientId: string) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (noteId: string) => progressNotesApi.delete(patientId, noteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients', patientId, 'progress-notes'] });
+      toast.success('Progress note deleted.');
+    },
+    onError: () => {
+      toast.error('Failed to delete progress note. Please try again.');
+    },
+  });
+}
+
+// ── Helper: build a blank note pre-filled from patient data ─────
 
 export function buildBlankProgressNote(
   patientId: string,
   patientName: string,
   patientMRN: string,
   clinicianName: string,
-): ProgressNote {
+): Omit<ProgressNote, 'id' | 'patientId' | 'createdAt'> {
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
   const timeStr = now.toTimeString().slice(0, 5);
@@ -247,7 +297,6 @@ export function buildBlankProgressNote(
   ];
 
   return {
-    id: `pn-${Date.now()}`,
     patientId,
     createdAt: now.toISOString(),
 

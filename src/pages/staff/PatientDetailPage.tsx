@@ -219,8 +219,6 @@ const PatientDetailPage: React.FC = () => {
 
   // Progress notes — select the raw notes array (stable reference), then filter
   // with useMemo so the derived array only changes when notes or id changes.
-  // Do NOT call getNotesByPatient() inside a selector — .filter() creates a new
-  // array every call, which fools Zustand's equality check into re-rendering forever.
   const allProgressNotes = useProgressNotesStore((s) => s.notes);
   const progressNotes = useMemo(
     () => allProgressNotes.filter((n) => n.patientId === (id ?? '')),
@@ -298,6 +296,9 @@ const PatientDetailPage: React.FC = () => {
     navigate(route);
   };
 
+  // Disable Add Record button if patient is Discharged
+  const isAddRecordDisabled = patient.status === 'Discharged';
+
   return (
     <div className="space-y-6 max-w-5xl">
       {/* ── Header ── */}
@@ -316,6 +317,8 @@ const PatientDetailPage: React.FC = () => {
             size="sm"
             leftIcon={<Plus size={14} />}
             onClick={() => setShowAddRecord(true)}
+            disabled={isAddRecordDisabled}
+            title={isAddRecordDisabled ? 'Cannot add records for discharged patients' : ''}
           >
             Add Record
           </Button>
@@ -365,28 +368,6 @@ const PatientDetailPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* ── Action Buttons ── */}
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" leftIcon={<ClipboardList size={14} />} onClick={() => navigate(`/patients/${id}/visits`)}>
-          Record Visit
-        </Button>
-        <Button size="sm" variant="outline" leftIcon={<Pill size={14} />} onClick={() => navigate(`/patients/${id}/medications`)}>
-          Order Medication
-        </Button>
-        <Button size="sm" variant="outline" leftIcon={<FlaskConical size={14} />} onClick={() => navigate(`/patients/${id}/labs`)}>
-          Order Lab
-        </Button>
-        <Button size="sm" variant="outline" leftIcon={<Camera size={14} />} onClick={() => navigate(`/patients/${id}/imaging`)}>
-          Order Imaging
-        </Button>
-        <Button size="sm" variant="outline" leftIcon={<GitBranch size={14} />} onClick={() => navigate(`/patients/${id}/referrals`)}>
-          Request Referral
-        </Button>
-        <Button size="sm" variant="outline" leftIcon={<Building2 size={14} />} onClick={() => navigate(`/patients/${id}/admissions`)}>
-          Record Admission
-        </Button>
-      </div>
-
       {/* ── Tabs ── */}
       <Card padding="none">
         <div className="flex border-b border-border-base overflow-x-auto">
@@ -412,6 +393,32 @@ const PatientDetailPage: React.FC = () => {
         </div>
 
         <div className="p-5">
+          {/* ── Visits Tab ── */}
+          {activeTab === 'Visits' && (
+            visitsData?.items?.length ? (
+              <table className="w-full text-sm">
+                <thead><tr className="text-left text-xs text-text-muted">
+                  {['Date', 'Type', 'Status', 'Outcome', ''].map((h) => (
+                    <th key={h} className="pb-3 pr-4 font-medium">{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody className="divide-y divide-border-base">
+                  {visitsData.items.map((v) => (
+                    <tr key={v.id} className="hover:bg-surface-low cursor-pointer" onClick={() => navigate(`/patients/${id}/visits/${v.id}`)}>
+                      <td className="py-3 pr-4">{formatDate(v.visitDate)}</td>
+                      <td className="py-3 pr-4"><Badge variant="secondary">{VISIT_TYPE_LABELS[v.visitType] || v.visitType}</Badge></td>
+                      <td className="py-3 pr-4"><StatusBadge status={v.overallStatus} /></td>
+                      <td className="py-3 pr-4"><StatusBadge status={v.outcome} type="visit" /></td>
+                      <td className="py-3 text-text-muted text-xs">PPS {v.ppsScore}% · KPS {v.kpsScore}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <EmptyState title="No visits recorded" description="Record the first home visit for this patient." actionLabel="Record Visit" onAction={() => navigate(`/patients/${id}/visits`)} />
+            )
+          )}
+
           {/* ── Progress Notes Tab ── */}
           {activeTab === 'Progress Notes' && (
             progressNotes.length ? (
@@ -456,32 +463,6 @@ const PatientDetailPage: React.FC = () => {
                 actionLabel="Record Progress Note"
                 onAction={() => navigate(`/patients/${id}/progress-note/new`)}
               />
-            )
-          )}
-
-          {/* ── Visits Tab ── */}
-          {activeTab === 'Visits' && (
-            visitsData?.items?.length ? (
-              <table className="w-full text-sm">
-                <thead><tr className="text-left text-xs text-text-muted">
-                  {['Date', 'Type', 'Status', 'Outcome', ''].map((h) => (
-                    <th key={h} className="pb-3 pr-4 font-medium">{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody className="divide-y divide-border-base">
-                  {visitsData.items.map((v) => (
-                    <tr key={v.id} className="hover:bg-surface-low cursor-pointer" onClick={() => navigate(`/patients/${id}/visits/${v.id}`)}>
-                      <td className="py-3 pr-4">{formatDate(v.visitDate)}</td>
-                      <td className="py-3 pr-4"><Badge variant="secondary">{VISIT_TYPE_LABELS[v.visitType] || v.visitType}</Badge></td>
-                      <td className="py-3 pr-4"><StatusBadge status={v.overallStatus} /></td>
-                      <td className="py-3 pr-4"><StatusBadge status={v.outcome} type="visit" /></td>
-                      <td className="py-3 text-text-muted text-xs">PPS {v.ppsScore}% · KPS {v.kpsScore}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <EmptyState title="No visits recorded" description="Record the first home visit for this patient." actionLabel="Record Visit" onAction={() => navigate(`/patients/${id}/visits`)} />
             )
           )}
 
@@ -540,7 +521,7 @@ const PatientDetailPage: React.FC = () => {
             )
           )}
 
-          {/* ── Imaging Tab (NEW) ── */}
+          {/* ── Imaging Tab ── */}
           {activeTab === 'Imaging' && (
             imagingOrders.length ? (
               <table className="w-full text-sm">

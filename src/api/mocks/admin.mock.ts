@@ -3,6 +3,10 @@ import { MOCK_PATIENTS } from './patients.mock';
 import { MOCK_PENDING_STAFF } from './auth.mock';
 import { MOCK_REFERRALS } from './referrals.mock';
 import { delay } from '@/lib/utils';
+import type { DischargeSummary } from '@/components/admin/DischargePatientModal';
+
+// ── Discharge summaries storage ──────────────────────────────────
+const MOCK_DISCHARGE_SUMMARIES: Record<string, DischargeSummary> = {};
 
 const MOCK_NOTIFICATIONS: Notification[] = [
   { id: 'notif-001', type: 'StaffApproval', message: 'New staff registration pending: Abebe Girma', data: { staffId: 'staff-pending-001', staffName: 'Abebe Girma' }, read: false, createdAt: '2026-08-30T08:00:00Z' },
@@ -143,6 +147,37 @@ export const mockAdminApi = {
     return { id: patientId, status: 'Discharged' as const, closeReason: data.reason, closeDate: new Date().toISOString() };
   },
 
+  // ── Discharge API ─────────────────────────────────────────────
+  dischargePatient: async (patientId: string, data: DischargeSummary): Promise<{ id: string; status: 'Discharged'; dischargeDate: string }> => {
+    await delay(800);
+    const idx = MOCK_PATIENTS.findIndex((p) => p.id === patientId);
+    if (idx !== -1) {
+      MOCK_PATIENTS[idx].status = 'Discharged';
+    }
+    MOCK_DISCHARGE_SUMMARIES[patientId] = data;
+    return {
+      id: patientId,
+      status: 'Discharged',
+      dischargeDate: data.dateOfDischarge || new Date().toISOString(),
+    };
+  },
+
+  getDischargeSummary: async (patientId: string): Promise<DischargeSummary> => {
+    await delay(400);
+    const summary = MOCK_DISCHARGE_SUMMARIES[patientId];
+    if (!summary) throw new Error('Discharge summary not found');
+    return summary;
+  },
+
+  updatePatientStatus: async (patientId: string, status: 'Active' | 'Discharged'): Promise<{ id: string; status: string }> => {
+    await delay(400);
+    const idx = MOCK_PATIENTS.findIndex((p) => p.id === patientId);
+    if (idx !== -1) {
+      MOCK_PATIENTS[idx].status = status;
+    }
+    return { id: patientId, status };
+  },
+
   getPendingStaff: async () => {
     await delay(350);
     return [...MOCK_PENDING_STAFF];
@@ -230,5 +265,22 @@ export const mockAdminApi = {
   exportReport: async (_format: 'pdf' | 'excel'): Promise<Blob> => {
     await delay(1000);
     return new Blob(['Mock export data'], { type: 'application/octet-stream' });
+  },
+
+  // ── Visit Edit ─────────────────────────────────────────────────
+  updateVisit: async (visitId: string, data: any): Promise<any> => {
+    await delay(500);
+    return { id: visitId, ...data, updatedAt: new Date().toISOString() };
+  },
+
+  getVisitEditHistory: async (visitId: string): Promise<any> => {
+    await delay(400);
+    return {
+      visitId,
+      history: [
+        { editedBy: { id: 'admin-001', name: 'Admin User' }, editedAt: '2026-08-29T10:00:00Z', changes: [{ field: 'painScore', from: 4, to: 3 }] },
+        { editedBy: { id: 'admin-001', name: 'Admin User' }, editedAt: '2026-08-28T14:00:00Z', changes: [{ field: 'overallStatus', from: 'Stable', to: 'Deteriorating' }] },
+      ],
+    };
   },
 };

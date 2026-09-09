@@ -10,7 +10,7 @@ export function useDashboardStats() {
     refetchInterval: 30000,
   });
 }
-// Add to useAdmin.ts
+
 export function useUpdateVisit() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -87,6 +87,54 @@ export function useCloseCase() {
     },
     onError: () => {
       toast.error('Failed to close case. Please try again.');
+    },
+  });
+}
+
+// ── Discharge API ─────────────────────────────────────────────
+export function useDischargePatient() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: ({ patientId, data }: { patientId: string; data: any }) =>
+      adminApi.dischargePatient(patientId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'patients', variables.patientId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'patients'] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      toast.success('Patient discharged successfully.');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to discharge patient.', error.response?.data?.message || 'Please try again.');
+    },
+  });
+}
+
+export function useDischargeSummary(patientId: string) {
+  return useQuery({
+    queryKey: ['admin', 'patients', patientId, 'discharge-summary'],
+    queryFn: () => adminApi.getDischargeSummary(patientId),
+    enabled: !!patientId,
+  });
+}
+
+// ── Update Patient Status ──────────────────────────────────────
+export function useUpdatePatientStatus() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: ({ patientId, status }: { patientId: string; status: 'Active' | 'Discharged' }) =>
+      adminApi.updatePatientStatus(patientId, status),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'patients', variables.patientId] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'patients'] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      toast.success(`Patient status updated to ${variables.status}.`);
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update patient status.', error.response?.data?.message || 'Please try again.');
     },
   });
 }

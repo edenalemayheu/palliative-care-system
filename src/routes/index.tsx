@@ -33,7 +33,7 @@ const SettingsPage = lazy(() => import('@/pages/admin/SettingsPage'));
 
 // Staff
 const DashboardPage = lazy(() => import('@/pages/staff/DashboardPage'));
-const VisitsListPage = lazy(() => import('@/pages/staff/VisitsListPage'));
+// VisitsListPage removed - no longer imported
 const PatientListPage = lazy(() => import('@/pages/staff/PatientListPage'));
 const PatientRegistrationPage = lazy(() => import('@/pages/staff/PatientRegistrationPage'));
 const PatientDetailPage = lazy(() => import('@/pages/staff/PatientDetailPage'));
@@ -51,7 +51,6 @@ const RecordAdmissionPage = lazy(() => import('@/pages/staff/RecordAdmissionPage
 const AdmissionDetailPage = lazy(() => import('@/pages/staff/AdmissionDetailPage'));
 const OrderImagingPage = lazy(() => import('@/pages/staff/OrderImagingPage'));
 const RecordProgressNotePage = lazy(() => import('@/pages/staff/RecordProgressNotePage'));
-
 
 // Print
 const PatientPrintPage = lazy(() => import('@/pages/PatientPrintPage'));
@@ -114,8 +113,7 @@ const AppRoutes: React.FC = () => (
         <Route path="/patients/:id/summary" element={<S><PatientSummaryPage /></S>} />
         <Route path="/patients/:id/progress" element={<S><PatientProgressPage /></S>} />
         
-        {/* Visits */}
-        <Route path="/visits" element={<S><VisitsListPage /></S>} />
+        {/* Visits - /visits route removed, only patient-specific visit routes remain */}
         <Route path="/patients/:id/visits" element={<S><RecordVisitPage /></S>} />
         <Route path="/patients/:id/visits/:visitId" element={<S><VisitDetailPage /></S>} />
         

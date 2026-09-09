@@ -3,6 +3,7 @@ import { USE_MOCK } from '@/lib/config';
 import { mockAdminApi } from './mocks/admin.mock';
 import type { DashboardStats, NotificationsResponse, PendingStaff, ApproveStaffRequest, ApprovedStaffResponse, CloseCaseRequest, CloseCaseResponse, AdminPatient, AdminPatientDetail, ReportData } from '@/types/admin.types';
 import type { Referral } from '@/types/referral.types';
+import type { DischargeSummary } from '@/components/admin/DischargePatientModal';
 
 export const adminApi = {
   getDashboardStats: (): Promise<DashboardStats> => {
@@ -33,6 +34,22 @@ export const adminApi = {
   closeCase: (patientId: string, data: CloseCaseRequest): Promise<CloseCaseResponse> => {
     if (USE_MOCK) return mockAdminApi.closeCase(patientId, data);
     return apiClient.put<CloseCaseResponse>(`/admin/patients/${patientId}/close-case`, data).then((r) => r.data);
+  },
+
+  // ── Discharge API ─────────────────────────────────────────────
+  dischargePatient: (patientId: string, data: DischargeSummary): Promise<{ id: string; status: 'Discharged'; dischargeDate: string }> => {
+    if (USE_MOCK) return mockAdminApi.dischargePatient(patientId, data);
+    return apiClient.post<{ id: string; status: 'Discharged'; dischargeDate: string }>(`/patients/${patientId}/discharge`, data).then((r) => r.data);
+  },
+
+  getDischargeSummary: (patientId: string): Promise<DischargeSummary> => {
+    if (USE_MOCK) return mockAdminApi.getDischargeSummary(patientId);
+    return apiClient.get<DischargeSummary>(`/patients/${patientId}/discharge-summary`).then((r) => r.data);
+  },
+
+  updatePatientStatus: (patientId: string, status: 'Active' | 'Discharged'): Promise<{ id: string; status: string }> => {
+    if (USE_MOCK) return mockAdminApi.updatePatientStatus(patientId, status);
+    return apiClient.put<{ id: string; status: string }>(`/patients/${patientId}/status`, { status }).then((r) => r.data);
   },
 
   getPendingStaff: (): Promise<PendingStaff[]> => {
@@ -74,11 +91,14 @@ export const adminApi = {
     if (USE_MOCK) return mockAdminApi.exportReport(format);
     return apiClient.get(`/admin/reports/export?format=${format}`, { responseType: 'blob' }).then((r) => r.data);
   },
-updateVisit: (visitId: string, data: any): Promise<any> => {
-  return apiClient.put(`/admin/visits/${visitId}`, data).then((r) => r.data);
-},
 
-getVisitEditHistory: (visitId: string): Promise<any> => {
-  return apiClient.get(`/admin/visits/${visitId}/history`).then((r) => r.data);
-},
+  updateVisit: (visitId: string, data: any): Promise<any> => {
+    if (USE_MOCK) return mockAdminApi.updateVisit(visitId, data);
+    return apiClient.put(`/admin/visits/${visitId}`, data).then((r) => r.data);
+  },
+
+  getVisitEditHistory: (visitId: string): Promise<any> => {
+    if (USE_MOCK) return mockAdminApi.getVisitEditHistory(visitId);
+    return apiClient.get(`/admin/visits/${visitId}/history`).then((r) => r.data);
+  },
 };

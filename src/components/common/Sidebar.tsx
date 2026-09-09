@@ -65,11 +65,11 @@ const adminNavItems = (pendingStaff = 0, pendingReferrals = 0): NavItem[] => [
   { label: 'Settings', href: '/admin/settings', icon: <Settings size={18} /> },
 ];
 
-// ── Staff nav items ──────────────────────────────────────────────
+// ── Staff nav items (Visits removed) ──────────────────────────────
 const staffNavItems = (): NavItem[] => [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={18} />, end: true },
   { label: 'Patients', href: '/patients', icon: <Users size={18} />, end: false },
-  { label: 'Visits', href: '/visits', icon: <ClipboardList size={18} />, end: false },
+  // Visits item removed from sidebar
 ];
 
 // ── Profile nav item (shared) ────────────────────────────────────
