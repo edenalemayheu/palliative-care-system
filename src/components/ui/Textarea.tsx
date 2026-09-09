@@ -9,7 +9,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 
 export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, error, label, hint, id, ...props }, ref) => {
-    const textareaId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    const textareaId = id || (label && typeof label === 'string' ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
     return (
       <div className="space-y-1">
