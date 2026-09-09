@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { XCircle, Phone, MapPin, User, Calendar, ClipboardEdit, Plus, Pencil, Trash2 } from 'lucide-react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import {
+  XCircle, Phone, MapPin, User, Calendar, ClipboardEdit, Plus,
+  Pencil, Trash2, FileText, Printer, AlertTriangle,
+} from 'lucide-react';
 import { useAdminPatientDetail, useCloseCase } from '@/hooks/useAdmin';
 import { usePatientVisits } from '@/hooks/useVisits';
 import { usePatientMedications } from '@/hooks/useMedications';
@@ -19,12 +22,14 @@ import { formatDate, cn } from '@/lib/utils';
 import { DISEASE_STAGE_LABELS as DSL, VISIT_TYPE_LABELS } from '@/constants';
 import { VisitEditModal } from '@/components/admin/VisitEditModal';
 import { useUpdateVisit, useVisitEditHistory } from '@/hooks/useAdmin';
-
+import type { DischargeSummary } from '@/components/admin/DischargePatientModal';
+import { printDischargeSummary } from '@/lib/printDischargeSummary';
+import { useToast } from '@/context/ToastContext';
 
 // ── Frontend-only history entry type ────────────────────────────
 interface HistoryEntry {
   id: string;
-  date: string;           // ISO string
+  date: string;
   category: string;
   note: string;
   addedBy: string;
@@ -42,7 +47,7 @@ const CATEGORY_OPTIONS = [
 
 // ── History modal (add / edit) ───────────────────────────────────
 interface HistoryModalProps {
-  entry?: HistoryEntry | null;   // null/undefined = adding new
+  entry?: HistoryEntry | null;
   onSave: (entry: HistoryEntry) => void;
   onClose: () => void;
 }
@@ -52,7 +57,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ entry, onSave, onClose }) =
   const [category, setCategory] = useState(entry?.category ?? 'Clinical Note');
   const [note, setNote] = useState(entry?.note ?? '');
   const [noteError, setNoteError] = useState('');
-const [editingVisit, setEditingVisit] = useState<string | null>(null);
+  const [editingVisit, setEditingVisit] = useState<string | null>(null);
 
   const handleSave = () => {
     if (!note.trim()) { setNoteError('Note cannot be empty.'); return; }
@@ -92,7 +97,6 @@ const [editingVisit, setEditingVisit] = useState<string | null>(null);
 
         {/* Form */}
         <div className="px-6 py-5 space-y-4">
-          {/* Date — read-only, shown for context */}
           <div>
             <p className="text-xs font-medium text-on-surface mb-1">Date</p>
             <p className="text-sm text-text-secondary">
@@ -100,7 +104,6 @@ const [editingVisit, setEditingVisit] = useState<string | null>(null);
             </p>
           </div>
 
-          {/* Category */}
           <div>
             <label htmlFor="history-category" className="block text-sm font-medium text-on-surface mb-1">
               Category
@@ -121,7 +124,6 @@ const [editingVisit, setEditingVisit] = useState<string | null>(null);
             </select>
           </div>
 
-          {/* Note */}
           <Textarea
             label="Note"
             rows={5}
@@ -132,7 +134,6 @@ const [editingVisit, setEditingVisit] = useState<string | null>(null);
           />
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3 px-6 pb-5">
           <Button variant="outline" className="flex-1" onClick={onClose}>
             Cancel
@@ -146,25 +147,145 @@ const [editingVisit, setEditingVisit] = useState<string | null>(null);
   );
 };
 
+// ── Discharge summary viewer modal ────────────────────────────────
+interface DischargeSummaryViewerProps {
+  summary: DischargeSummary;
+  patientName: string;
+  onClose: () => void;
+  onPrint: () => void;
+}
+
+const DischargeSummaryViewer: React.FC<DischargeSummaryViewerProps> = ({
+  summary, patientName, onClose, onPrint,
+}) => {
+  const rows: [string, string][] = [
+    ['Patient', summary.fullName || patientName],
+    ['Hospital / Facility', summary.hospitalName],
+    ['Palliative Care Unit', summary.palliativeCareUnit],
+    ['Date of Admission', summary.dateOfAdmission ? formatDate(summary.dateOfAdmission) : '—'],
+    ['Date of Discharge', summary.dateOfDischarge ? formatDate(summary.dateOfDischarge) : '—'],
+    ['Time of Discharge', summary.timeOfDischarge || '—'],
+    ['Discharge Type', summary.dischargeType === 'Other' ? `Other — ${summary.dischargeTypeOther}` : summary.dischargeType || '—'],
+    ['Discharged To', summary.dischargedTo === 'Other' ? `Other — ${summary.dischargedToOther}` : summary.dischargedTo || '—'],
+    ['Overall Condition', summary.overallCondition || '—'],
+    ['Primary Diagnosis', summary.primaryDiagnosis || '—'],
+    ['Final Discharge Diagnosis', summary.finalDischargeDiagnosis || '—'],
+    ['Pain Score at Discharge', summary.painScore ? `${summary.painScore} / 10` : '—'],
+    ['Pain Control', summary.painControl || '—'],
+    ['Medication Reconciliation', summary.medicationReconciliation || '—'],
+    ['Code Status', summary.codeStatus || '—'],
+    ['Transport', summary.transport || '—'],
+    ['Submitted By', summary.submittedBy || '—'],
+    ['Submitted At', summary.submittedAt
+      ? new Date(summary.submittedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : '—'],
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-on-surface/30 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="w-full max-w-2xl my-4 bg-surface-lowest rounded-2xl border border-border-base shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border-base">
+          <div className="flex items-center gap-2">
+            <FileText size={17} className="text-primary" />
+            <div>
+              <h2 className="text-base font-semibold text-on-surface">Discharge Summary</h2>
+              <p className="text-xs text-text-muted mt-0.5">{patientName}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-text-muted hover:bg-surface-low transition-colors"
+            aria-label="Close"
+          >
+            <XCircle size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5">
+          <div className="divide-y divide-border-base">
+            {rows.map(([label, value]) => (
+              <div key={label} className="flex items-start gap-3 py-2.5 text-sm">
+                <span className="text-text-muted min-w-[180px] flex-shrink-0 text-xs pt-0.5">{label}</span>
+                <span className="text-on-surface font-medium">{value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Discharge notes preview */}
+          {summary.dischargeNotes && (
+            <div className="mt-4">
+              <p className="text-xs font-medium text-text-muted mb-1.5">Discharge Notes</p>
+              <div className="bg-surface-low rounded-lg px-4 py-3 text-sm text-on-surface whitespace-pre-wrap">
+                {summary.dischargeNotes}
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs text-text-muted mt-4">
+            This is a summary view. Use "Print / Save as PDF" to see the full discharge form with all sections.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 pb-5">
+          <Button variant="outline" className="flex-1" onClick={onClose}>
+            Close
+          </Button>
+          <Button
+            variant="secondary"
+            className="flex-1"
+            leftIcon={<Printer size={14} />}
+            onClick={onPrint}
+          >
+            Print / Save as PDF
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Tabs ──────────────────────────────────────────────────────────
 const tabs = ['Visits', 'Medications', 'Labs', 'Referrals', 'Admissions'] as const;
 type Tab = typeof tabs[number];
 
+// ── Main page ─────────────────────────────────────────────────────
 const AdminPatientDetailPage: React.FC = () => {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
+
   const [activeTab, setActiveTab] = useState<Tab>('Visits');
+
+  // Close-case state
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [closeReason, setCloseReason] = useState<'Improved' | 'Deceased' | ''>('');
 
-  // Frontend-only patient history state
-  const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
+  // Discharge state — read from router location state (set by DischargePatientPage on success)
+  const locationState = (location.state as {
+    dischargeSummary?: DischargeSummary;
+    dischargeHistoryEntry?: HistoryEntry;
+  } | null) ?? null;
+
+  const [dischargeSummary, setDischargeSummary] = useState<DischargeSummary | null>(
+    locationState?.dischargeSummary ?? null
+  );
+  const [showDischargeSummaryViewer, setShowDischargeSummaryViewer] = useState(false);
+
+  // Frontend-only patient history state — seed with discharge entry if returning from discharge page
+  const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>(() =>
+    locationState?.dischargeHistoryEntry ? [locationState.dischargeHistoryEntry] : []
+  );
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<HistoryEntry | null>(null);
 
   // Primary patient data
   const { data: patient, isLoading, error, refetch } = useAdminPatientDetail(patientId!);
 
-  // Sub-record data — same hooks as staff patient detail page
+  // Sub-record data
   const { data: visitsData } = usePatientVisits(patientId!);
   const { data: medsData } = usePatientMedications(patientId!);
   const { data: labsData } = usePatientLabs(patientId!);
@@ -184,6 +305,8 @@ const AdminPatientDetailPage: React.FC = () => {
     Admissions:  admsData?.total   ?? 0,
   };
 
+  // ── Handlers ────────────────────────────────────────────────────
+
   const handleCloseCase = () => {
     if (!closeReason) return;
     closeCaseMutation.mutate(
@@ -200,7 +323,7 @@ const AdminPatientDetailPage: React.FC = () => {
         updated[exists] = entry;
         return updated;
       }
-      return [entry, ...prev];   // newest first
+      return [entry, ...prev];
     });
     setShowHistoryModal(false);
     setEditingEntry(null);
@@ -214,6 +337,15 @@ const AdminPatientDetailPage: React.FC = () => {
   const handleHistoryDelete = (id: string) => {
     setHistoryEntries((prev) => prev.filter((e) => e.id !== id));
   };
+
+  const handlePrintDischargeSummary = () => {
+    if (dischargeSummary) printDischargeSummary(dischargeSummary);
+  };
+
+  // Derive discharged-on date for header label
+  const dischargedOnLabel = dischargeSummary?.dateOfDischarge
+    ? formatDate(dischargeSummary.dateOfDischarge)
+    : patient.status === 'Discharged' ? 'previously' : null;
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -230,6 +362,8 @@ const AdminPatientDetailPage: React.FC = () => {
         <div className="flex items-center gap-3 flex-wrap">
           <StatusBadge status={patient.status} type="patient" />
           <StatusBadge status={patient.currentLocation} />
+
+          {/* Update History — always visible */}
           <Button
             variant="outline"
             size="sm"
@@ -238,6 +372,40 @@ const AdminPatientDetailPage: React.FC = () => {
           >
             Update History
           </Button>
+
+          {/* Discharge Patient — only when Active; warning-toned to signal significance */}
+          {patient.status === 'Active' && (
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<AlertTriangle size={14} className="text-warning" />}
+              className="border-warning/50 text-warning hover:bg-warning/10 hover:border-warning"
+              onClick={() => navigate(`/admin/patients/${patientId}/discharge`)}
+            >
+              Discharge Patient
+            </Button>
+          )}
+
+          {/* View Discharge Summary — once discharged */}
+          {patient.status === 'Discharged' && dischargeSummary && (
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<FileText size={14} />}
+              onClick={() => setShowDischargeSummaryViewer(true)}
+            >
+              View Discharge Summary
+            </Button>
+          )}
+
+          {/* Discharged label — if discharged but no local summary (e.g. via Close Case) */}
+          {patient.status === 'Discharged' && !dischargeSummary && dischargedOnLabel && (
+            <span className="text-xs text-text-muted px-2 py-1 rounded-lg border border-border-base bg-surface-low">
+              Discharged {dischargedOnLabel}
+            </span>
+          )}
+
+          {/* Close Case — only when Active */}
           {patient.status === 'Active' && (
             <Button
               variant="destructive"
@@ -281,6 +449,18 @@ const AdminPatientDetailPage: React.FC = () => {
               <Row label="Comorbidities" value={patient.comorbidities.join(', ')} />
             )}
             <Row label="Registered" value={formatDate(patient.createdAt)} />
+            {dischargeSummary && (
+              <Row label="Discharged">
+                <button
+                  onClick={() => setShowDischargeSummaryViewer(true)}
+                  className="text-primary text-xs underline underline-offset-2 hover:text-primary-hover transition-colors"
+                >
+                  {dischargeSummary.dateOfDischarge
+                    ? formatDate(dischargeSummary.dateOfDischarge)
+                    : 'View summary'}
+                </button>
+              </Row>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -310,7 +490,9 @@ const AdminPatientDetailPage: React.FC = () => {
         {historyEntries.length === 0 ? (
           <div className="px-5 py-8 text-center">
             <p className="text-sm font-medium text-on-surface mb-1">No history entries yet</p>
-            <p className="text-xs text-text-muted mb-4">Click "Add Entry" or "Update History" to record clinical notes, observations, and care updates.</p>
+            <p className="text-xs text-text-muted mb-4">
+              Click "Add Entry" or "Update History" to record clinical notes, observations, and care updates.
+            </p>
             <Button
               size="sm"
               variant="outline"
@@ -330,6 +512,15 @@ const AdminPatientDetailPage: React.FC = () => {
                       <Badge variant="secondary">{entry.category}</Badge>
                       <span className="text-xs text-text-muted">{formatDate(entry.date)}</span>
                       <span className="text-xs text-text-muted">· {entry.addedBy}</span>
+                      {/* "View Discharge Summary" link next to the discharge history entry */}
+                      {entry.id.startsWith('hist-discharge-') && dischargeSummary && (
+                        <button
+                          onClick={() => setShowDischargeSummaryViewer(true)}
+                          className="text-xs text-primary underline underline-offset-2 hover:text-primary-hover transition-colors"
+                        >
+                          View Discharge Summary
+                        </button>
+                      )}
                     </div>
                     <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">{entry.note}</p>
                   </div>
@@ -360,7 +551,6 @@ const AdminPatientDetailPage: React.FC = () => {
 
       {/* ── Tabbed records ── */}
       <Card padding="none">
-        {/* Tab strip */}
         <div className="flex border-b border-border-base overflow-x-auto">
           {tabs.map((tab) => (
             <button
@@ -383,7 +573,6 @@ const AdminPatientDetailPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Tab content */}
         <div className="p-5 overflow-x-auto">
 
           {/* Visits */}
@@ -550,7 +739,6 @@ const AdminPatientDetailPage: React.FC = () => {
               <EmptyState title="No admissions recorded" description="No hospital admissions have been recorded for this patient yet." />
             )
           )}
-
         </div>
       </Card>
 
@@ -560,6 +748,16 @@ const AdminPatientDetailPage: React.FC = () => {
           entry={editingEntry}
           onSave={handleHistorySave}
           onClose={() => { setShowHistoryModal(false); setEditingEntry(null); }}
+        />
+      )}
+
+      {/* ── Discharge summary viewer ── */}
+      {showDischargeSummaryViewer && dischargeSummary && (
+        <DischargeSummaryViewer
+          summary={dischargeSummary}
+          patientName={`${patient.firstName} ${patient.lastName}`}
+          onClose={() => setShowDischargeSummaryViewer(false)}
+          onPrint={handlePrintDischargeSummary}
         />
       )}
 
