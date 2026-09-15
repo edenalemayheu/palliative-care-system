@@ -12,7 +12,7 @@ import { usePatientMedications } from '@/hooks/useMedications';
 import { usePatientLabs } from '@/hooks/useLabs';
 import { usePatientReferrals } from '@/hooks/useReferrals';
 import { usePatientAdmissions } from '@/hooks/useAdmissions';
-import { useProgressNotesStore } from '@/hooks/useProgressNotes';
+import { useProgressNotes } from '@/hooks/useProgressNotes';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -217,12 +217,11 @@ const PatientDetailPage: React.FC = () => {
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
 
-  // Progress notes — select the raw notes array (stable reference), then filter
-  // with useMemo so the derived array only changes when notes or id changes.
-  const allProgressNotes = useProgressNotesStore((s) => s.notes);
+  // Progress notes — fetched via React Query, filtered by patientId
+  const { data: progressNotesData } = useProgressNotes(id ?? '');
   const progressNotes = useMemo(
-    () => allProgressNotes.filter((n) => n.patientId === (id ?? '')),
-    [allProgressNotes, id],
+    () => progressNotesData?.items ?? [],
+    [progressNotesData],
   );
 
   // If returning from the progress note form with a saved note, show Progress Notes tab

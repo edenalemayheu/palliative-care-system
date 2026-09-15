@@ -6,7 +6,7 @@ import {
 import { usePatient } from '@/hooks/usePatients';
 import { useAuthStore } from '@/store/auth.store';
 import {
-  useProgressNotesStore,
+  useCreateProgressNote,
   buildBlankProgressNote,
   type ProgressNote,
   type ProgressNoteMedRow,
@@ -150,7 +150,7 @@ const RecordProgressNotePage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
-  const addNote = useProgressNotesStore((s) => s.addNote);
+  const createNoteMutation = useCreateProgressNote(id ?? '');
 
   const { data: patient, isLoading, error, refetch } = usePatient(id!);
 
@@ -206,10 +206,18 @@ const RecordProgressNotePage: React.FC = () => {
   };
 
   const handleConfirmSave = () => {
-    addNote({ ...form, createdAt: new Date().toISOString() });
-    setShowConfirm(false);
-    toast.success('Progress note saved successfully.');
-    navigate(`/patients/${id}`, { state: { savedProgressNote: true } });
+    // buildBlankProgressNote returns Omit<ProgressNote, 'id' | 'patientId' | 'createdAt'>
+    // which is exactly what useCreateProgressNote expects.
+    const { id: _id, patientId: _patientId, createdAt: _createdAt, ...noteData } = form;
+    createNoteMutation.mutate(noteData, {
+      onSuccess: () => {
+        setShowConfirm(false);
+        navigate(`/patients/${id}`, { state: { savedProgressNote: true } });
+      },
+      onError: () => {
+        setShowConfirm(false);
+      },
+    });
   };
 
   const handleBack = () => {
@@ -352,7 +360,7 @@ const RecordProgressNotePage: React.FC = () => {
               <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>
                 Cancel
               </Button>
-              <Button className="flex-1" onClick={handleConfirmSave}>
+              <Button className="flex-1" onClick={handleConfirmSave} loading={createNoteMutation.isPending}>
                 Yes, Save Note
               </Button>
             </div>
