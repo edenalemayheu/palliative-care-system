@@ -1,3 +1,4 @@
+import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/auth';
@@ -37,14 +38,11 @@ export function useLogin() {
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: (response) => {
       setAuth(response.user, response.token);
-      toast.success('Login successful', `Welcome back, ${response.user.name}!`);
+      toast.success(`Welcome back, ${response.user.name}!`);
       if (response.user.type === 'admin') navigate('/admin');
       else navigate('/dashboard');
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Invalid email or password';
-      // Toast is shown inline in the login form
-    },
+    // onError intentionally omitted — error message is shown inline in the login form
   });
 }
 
@@ -71,21 +69,27 @@ export function useCurrentUser() {
   const token = useAuthStore((s) => s.token);
   const setInitialized = useAuthStore((s) => s.setInitialized);
   
-  return useQuery({
+  const query = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: () => authApi.getCurrentUser(),
     enabled: !!token,
     retry: false,
     staleTime: 5 * 60 * 1000,
-    onSuccess: () => {
+  });
+
+  // TanStack Query v5 removed onSuccess/onError from useQuery options.
+  // Use useEffect on query status instead.
+  React.useEffect(() => {
+    if (query.isSuccess) {
       setInitialized();
-    },
-    onError: () => {
-      // If token is invalid, clear auth state
+    }
+    if (query.isError) {
       useAuthStore.getState().logout();
       setInitialized();
-    },
-  });
+    }
+  }, [query.isSuccess, query.isError, setInitialized]);
+
+  return query;
 }
 
 export function useStaffProfile() {
@@ -113,7 +117,7 @@ export function useUpdateStaffProfile() {
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Failed to update profile.';
-      toast.error('Update failed', message);
+      toast.error(`Update failed: ${message}`);
     },
   });
 }

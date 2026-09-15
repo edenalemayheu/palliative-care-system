@@ -164,12 +164,19 @@ const RecordProgressNotePage: React.FC = () => {
   // Initialise form once patient data loads
   React.useEffect(() => {
     if (patient && !form) {
-      setForm(buildBlankProgressNote(
-        patient.id,
-        `${patient.firstName} ${patient.lastName}`,
-        patient.patientDisplayId ?? patient.id,
-        user?.name ?? '',
-      ));
+      setForm({
+        // buildBlankProgressNote omits id / patientId / createdAt —
+        // supply them here so the form state is a complete ProgressNote.
+        id: '',
+        patientId: patient.id,
+        createdAt: new Date().toISOString(),
+        ...buildBlankProgressNote(
+          patient.id,
+          `${patient.firstName} ${patient.lastName}`,
+          patient.patientDisplayId ?? patient.id,
+          user?.name ?? '',
+        ),
+      });
     }
   }, [patient, form, user?.name]);
 
@@ -206,8 +213,9 @@ const RecordProgressNotePage: React.FC = () => {
   };
 
   const handleConfirmSave = () => {
-    // buildBlankProgressNote returns Omit<ProgressNote, 'id' | 'patientId' | 'createdAt'>
-    // which is exactly what useCreateProgressNote expects.
+    if (!form) return; // guard: form is initialized before this dialog can open
+    // Strip the server-managed fields — useCreateProgressNote expects
+    // Omit<ProgressNote, 'id' | 'patientId' | 'createdAt'>
     const { id: _id, patientId: _patientId, createdAt: _createdAt, ...noteData } = form;
     createNoteMutation.mutate(noteData, {
       onSuccess: () => {
