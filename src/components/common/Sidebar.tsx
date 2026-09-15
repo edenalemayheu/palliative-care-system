@@ -4,12 +4,14 @@ import {
   LayoutDashboard, Users, UserCheck, GitBranch,
   BarChart3, Settings, Heart, LogOut, Menu, X,
   ChevronRight, Bell, ClipboardList, UserCircle,
+  Sun, Moon,
 } from 'lucide-react';
 import { cn, getInitials } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
 import { useLogout } from '@/hooks/useAuth';
 import { ROLE_LABELS } from '@/constants';
 import { APP_NAME } from '@/lib/config';
+import { useTheme } from '@/context/ThemeContext';
 
 interface NavItem {
   label: string;
@@ -143,6 +145,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { user } = useAuthStore();
   const logoutMutation = useLogout();
+  const { theme, toggleTheme } = useTheme();
 
   const isAdmin = user?.type === 'admin';
   
@@ -248,6 +251,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingStaff = 0, pendingRefer
               {user?.type === 'admin' ? 'Administrator' : ROLE_LABELS[user?.role || ''] || user?.email}
             </p>
           </div>
+          {/* ── Theme toggle ── */}
+          <button
+            onClick={toggleTheme}
+            className="flex-shrink-0 p-1.5 rounded-lg text-text-muted hover:text-primary hover:bg-primary-light transition-all"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          >
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
           <button
             onClick={() => setShowLogoutDialog(true)}
             className="flex-shrink-0 p-1.5 rounded-lg text-text-muted hover:text-error hover:bg-error-bg transition-all"
