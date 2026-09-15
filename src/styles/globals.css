@@ -2,31 +2,117 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── CSS Custom Properties ─────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES — DESIGN TOKENS
+   All Tailwind color utilities reference these variables.
+   Switching themes = swapping variable values under html.dark.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Light Mode (default) ─────────────────────────────────────── */
 :root {
-  --color-primary: #002395;
+  /* Brand */
+  --color-primary:       #002395;
   --color-primary-hover: #001B73;
   --color-primary-light: #E8ECF7;
-  --color-background: #F7F9FE;
-  --color-surface: #FFFFFF;
-  --color-on-surface: #181C20;
-  --color-on-surface-variant: #424754;
-  --color-text-secondary: #52627A;
-  --color-text-muted: #8290A7;
-  --color-border: #E6EBF4;
-  --color-success: #43B982;
-  --color-success-bg: #EAF8F2;
-  --color-warning: #F5A34A;
-  --color-warning-bg: #FFF3E0;
-  --color-error: #E74F3D;
-  --color-error-bg: #FCE8E8;
 
+  /* Page & surface backgrounds */
+  --color-background:        #F7F9FE;
+  --color-surface:           #F7F9FE;
+  --color-surface-lowest:    #FFFFFF;
+  --color-surface-low:       #F1F4F9;
+  --color-surface-container: #ECEEF3;
+  --color-surface-high:      #E6E8ED;
+  --color-surface-highest:   #E0E2E7;
+  --color-surface-dim:       #D8DADF;
+
+  /* Text */
+  --color-on-surface:         #181C20;
+  --color-on-surface-variant: #424754;
+  --color-text-secondary:     #52627A;
+  --color-text-muted:         #8290A7;
+
+  /* Borders & outlines */
+  --color-border-base:      #E6EBF4;
+  --color-outline:          #727785;
+  --color-outline-variant:  #C2C6D6;
+
+  /* Semantic colours */
+  --color-success:    #43B982;
+  --color-success-bg: #EAF8F2;
+  --color-warning:    #F5A34A;
+  --color-warning-bg: #FFF3E0;
+  --color-error:      #E74F3D;
+  --color-error-bg:   #FCE8E8;
+
+  /* Tertiary accent */
+  --color-tertiary: #4C5C7D;
+
+  /* Shadows */
   --shadow-card: 0 12px 35px rgba(50, 88, 150, 0.08);
-  --shadow-nav: 0 2px 10px rgba(50, 88, 150, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-nav:  0 2px 10px rgba(50, 88, 150, 0.05);
+  --shadow-md:   0 4px 6px rgba(0, 0, 0, 0.07);
 }
 
-/* ─── Base Resets ─────────────────────────────────────────── */
+/* ── Dark Mode ────────────────────────────────────────────────── */
+/*
+   Palette rationale:
+   - Backgrounds use deep navy/slate so the Imperial Blue brand
+     still feels at home rather than clashing with generic dark greys.
+   - Surfaces use progressively lighter slates to maintain the same
+     visual hierarchy (lowest → dim) that light mode uses.
+   - Primary blue is lightened to #4D7FFF so it contrasts on dark
+     backgrounds while keeping the brand identity intact.
+   - All semantic colours are kept the same hue but at elevated
+     lightness/opacity so they remain distinct without glaring.
+*/
+html.dark {
+  /* Brand — brightened for dark-bg contrast */
+  --color-primary:       #4D7FFF;
+  --color-primary-hover: #6B97FF;
+  --color-primary-light: #1A2E5A;
+
+  /* Page & surface backgrounds */
+  --color-background:        #0F172A;
+  --color-surface:           #111827;
+  --color-surface-lowest:    #1E293B;
+  --color-surface-low:       #273449;
+  --color-surface-container: #2D3C54;
+  --color-surface-high:      #334155;
+  --color-surface-highest:   #3D4F6A;
+  --color-surface-dim:       #475569;
+
+  /* Text */
+  --color-on-surface:         #F8FAFC;
+  --color-on-surface-variant: #CBD5E1;
+  --color-text-secondary:     #94A3B8;
+  --color-text-muted:         #64748B;
+
+  /* Borders & outlines */
+  --color-border-base:     #334155;
+  --color-outline:         #64748B;
+  --color-outline-variant: #475569;
+
+  /* Semantic colours — same hue, adjusted for dark bg */
+  --color-success:    #34D399;
+  --color-success-bg: #0D2B20;
+  --color-warning:    #FBBF24;
+  --color-warning-bg: #2D1F06;
+  --color-error:      #F87171;
+  --color-error-bg:   #2D1015;
+
+  /* Tertiary accent */
+  --color-tertiary: #94A3B8;
+
+  /* Shadows — deeper, less blue-tinted */
+  --shadow-card: 0 12px 35px rgba(0, 0, 0, 0.40);
+  --shadow-nav:  0 2px 10px rgba(0, 0, 0, 0.30);
+  --shadow-md:   0 4px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE RESETS
+   ═══════════════════════════════════════════════════════════════ */
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -44,16 +130,24 @@ body {
   line-height: 1.6;
   margin: 0;
   padding: 0;
+  /* Smooth background/color transitions when toggling theme */
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
-/* ─── Focus Styles (Accessibility) ───────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   FOCUS STYLES (Accessibility)
+   ═══════════════════════════════════════════════════════════════ */
+
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* ─── Scrollbar Styling ──────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBAR STYLING
+   ═══════════════════════════════════════════════════════════════ */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -62,17 +156,42 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
+  background-color: var(--color-border-base);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-outline-variant, #C2C6D6);
+  background-color: var(--color-outline-variant);
 }
 
-/* ─── Pulse Line Animation (heartbeat motif) ─────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   SKELETON LOADER
+   Adapts to theme automatically via CSS variables.
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-low)       25%,
+    var(--color-surface-container) 50%,
+    var(--color-surface-low)       75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PULSE LINE ANIMATION (heartbeat motif)
+   ═══════════════════════════════════════════════════════════════ */
+
 @keyframes pulse-line {
   0%, 100% { stroke-dashoffset: 0; }
-  50% { stroke-dashoffset: -20; }
+  50%       { stroke-dashoffset: -20; }
 }
 
 .pulse-line {
@@ -80,17 +199,23 @@ body {
   animation: pulse-line 2s ease-in-out infinite;
 }
 
-/* ─── Status Pulse Animation ─────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   STATUS PULSE ANIMATION
+   ═══════════════════════════════════════════════════════════════ */
+
 @keyframes status-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(0.95); }
+  50%       { opacity: 0.6; transform: scale(0.95); }
 }
 
 .status-pulse {
   animation: status-pulse 2s ease-in-out infinite;
 }
 
-/* ─── Page Transition Container ──────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   PAGE TRANSITION
+   ═══════════════════════════════════════════════════════════════ */
+
 .page-transition-enter {
   opacity: 0;
   transform: translateY(8px);
@@ -108,25 +233,33 @@ body {
   transition: opacity 150ms ease-in;
 }
 
-/* ─── Skeleton Loader ─────────────────────────────────────── */
-@keyframes skeleton-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+/* ═══════════════════════════════════════════════════════════════
+   THEME TOGGLE — smooth icon swap
+   ═══════════════════════════════════════════════════════════════ */
+
+.theme-icon-enter {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.7);
+}
+.theme-icon-enter-active {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+.theme-icon-exit {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+.theme-icon-exit-active {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.7);
+  transition: opacity 200ms ease, transform 200ms ease;
 }
 
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    #f0f2f7 25%,
-    #e8ebf2 50%,
-    #f0f2f7 75%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.5s infinite;
-  border-radius: 4px;
-}
+/* ═══════════════════════════════════════════════════════════════
+   PRINT STYLES
+   ═══════════════════════════════════════════════════════════════ */
 
-/* ─── Print Styles ────────────────────────────────────────── */
 @media print {
   .no-print { display: none !important; }
   body { background: white; }
