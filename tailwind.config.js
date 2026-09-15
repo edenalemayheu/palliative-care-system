@@ -1,44 +1,50 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  // ── Dark mode: toggled by adding/removing the `dark` class on <html> ──
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        // All colors reference CSS custom properties defined in globals.css.
+        // When html.dark is active those variables resolve to dark-palette
+        // values, so every Tailwind utility (bg-*, text-*, border-*, etc.)
+        // automatically picks up the correct colour without any `dark:` variants.
         primary: {
-          DEFAULT: '#002395',
-          hover: '#001B73',
-          light: '#E8ECF7',
+          DEFAULT: 'var(--color-primary)',
+          hover:   'var(--color-primary-hover)',
+          light:   'var(--color-primary-light)',
         },
-        background: '#F7F9FE',
+        background: 'var(--color-background)',
         surface: {
-          DEFAULT: '#F7F9FE',
-          lowest: '#FFFFFF',
-          low: '#F1F4F9',
-          container: '#ECEEF3',
-          high: '#E6E8ED',
-          highest: '#E0E2E7',
-          dim: '#D8DADF',
+          DEFAULT:   'var(--color-surface)',
+          lowest:    'var(--color-surface-lowest)',
+          low:       'var(--color-surface-low)',
+          container: 'var(--color-surface-container)',
+          high:      'var(--color-surface-high)',
+          highest:   'var(--color-surface-highest)',
+          dim:       'var(--color-surface-dim)',
         },
-        'on-surface': '#181C20',
-        'on-surface-variant': '#424754',
-        'text-secondary': '#52627A',
-        'text-muted': '#8290A7',
-        outline: '#727785',
-        'outline-variant': '#C2C6D6',
-        'border-base': '#E6EBF4',
+        'on-surface':         'var(--color-on-surface)',
+        'on-surface-variant': 'var(--color-on-surface-variant)',
+        'text-secondary':     'var(--color-text-secondary)',
+        'text-muted':         'var(--color-text-muted)',
+        outline:              'var(--color-outline)',
+        'outline-variant':    'var(--color-outline-variant)',
+        'border-base':        'var(--color-border-base)',
         success: {
-          DEFAULT: '#43B982',
-          bg: '#EAF8F2',
+          DEFAULT: 'var(--color-success)',
+          bg:      'var(--color-success-bg)',
         },
         warning: {
-          DEFAULT: '#F5A34A',
-          bg: '#FFF3E0',
+          DEFAULT: 'var(--color-warning)',
+          bg:      'var(--color-warning-bg)',
         },
         error: {
-          DEFAULT: '#E74F3D',
-          bg: '#FCE8E8',
+          DEFAULT: 'var(--color-error)',
+          bg:      'var(--color-error-bg)',
         },
-        tertiary: '#4C5C7D',
+        tertiary: 'var(--color-tertiary)',
       },
       fontFamily: {
         sans: ['Outfit', 'system-ui', '-apple-system', 'sans-serif'],
