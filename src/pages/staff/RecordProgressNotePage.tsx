@@ -6,7 +6,7 @@ import {
 import { usePatient } from '@/hooks/usePatients';
 import { useAuthStore } from '@/store/auth.store';
 import {
-  useProgressNotesStore,
+  useCreateProgressNote,
   buildBlankProgressNote,
   type ProgressNote,
   type ProgressNoteMedRow,
@@ -150,7 +150,7 @@ const RecordProgressNotePage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
-  const addNote = useProgressNotesStore((s) => s.addNote);
+  const createNoteMutation = useCreateProgressNote(id ?? '');
 
   const { data: patient, isLoading, error, refetch } = usePatient(id!);
 
@@ -164,12 +164,19 @@ const RecordProgressNotePage: React.FC = () => {
   // Initialise form once patient data loads
   React.useEffect(() => {
     if (patient && !form) {
-      setForm(buildBlankProgressNote(
-        patient.id,
-        `${patient.firstName} ${patient.lastName}`,
-        patient.patientDisplayId ?? patient.id,
-        user?.name ?? '',
-      ));
+      setForm({
+        // buildBlankProgressNote omits id / patientId / createdAt —
+        // supply them here so the form state is a complete ProgressNote.
+        id: '',
+        patientId: patient.id,
+        createdAt: new Date().toISOString(),
+        ...buildBlankProgressNote(
+          patient.id,
+          `${patient.firstName} ${patient.lastName}`,
+          patient.patientDisplayId ?? patient.id,
+          user?.name ?? '',
+        ),
+      });
     }
   }, [patient, form, user?.name]);
 
@@ -206,10 +213,19 @@ const RecordProgressNotePage: React.FC = () => {
   };
 
   const handleConfirmSave = () => {
-    addNote({ ...form, createdAt: new Date().toISOString() });
-    setShowConfirm(false);
-    toast.success('Progress note saved successfully.');
-    navigate(`/patients/${id}`, { state: { savedProgressNote: true } });
+    if (!form) return; // guard: form is initialized before this dialog can open
+    // Strip the server-managed fields — useCreateProgressNote expects
+    // Omit<ProgressNote, 'id' | 'patientId' | 'createdAt'>
+    const { id: _id, patientId: _patientId, createdAt: _createdAt, ...noteData } = form;
+    createNoteMutation.mutate(noteData, {
+      onSuccess: () => {
+        setShowConfirm(false);
+        navigate(`/patients/${id}`, { state: { savedProgressNote: true } });
+      },
+      onError: () => {
+        setShowConfirm(false);
+      },
+    });
   };
 
   const handleBack = () => {
@@ -352,7 +368,7 @@ const RecordProgressNotePage: React.FC = () => {
               <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>
                 Cancel
               </Button>
-              <Button className="flex-1" onClick={handleConfirmSave}>
+              <Button className="flex-1" onClick={handleConfirmSave} loading={createNoteMutation.isPending}>
                 Yes, Save Note
               </Button>
             </div>

@@ -45,8 +45,13 @@ const CheckboxGroup: React.FC<{
 
 // ── Schema ────────────────────────────────────────────────────────
 const orderImagingSchema = z.object({
-  // Patient Info (auto-filled)
-  // Order Details
+  // ── 2. Clinical Information ──
+  clinicalDiagnosis: z.string().optional(),
+  presentingSymptoms: z.string().optional(),
+  medicalHistory: z.string().optional(),
+  previousImaging: z.string().optional(),
+  previousImagingDetails: z.string().optional(),
+  // ── 3. Order Details ──
   modality: z.enum(['XRay', 'Ultrasound', 'CT', 'MRI', 'Mammography', 'Fluoroscopy', 'Interventional', 'NuclearMedicine', 'Other']),
   bodyRegion: z.string().min(1, 'Body region is required'),
   specificSite: z.string().optional(),
@@ -56,7 +61,7 @@ const orderImagingSchema = z.object({
   contrast: z.enum(['No', 'Yes', 'ToBeDetermined']),
   priority: z.enum(['Routine', 'Urgent', 'Emergency']),
   reasonForUrgency: z.string().optional(),
-  // Safety Screening
+  // ── 4. Safety Screening ──
   pregnancyStatus: z.enum(['NotPregnant', 'Pregnant', 'PossiblyPregnant', 'NotApplicable']),
   implantedDevice: z.boolean(),
   deviceDetails: z.string().optional(),
@@ -65,10 +70,14 @@ const orderImagingSchema = z.object({
   renalFunction: z.string().optional(),
   creatinine: z.string().optional(),
   egfr: z.string().optional(),
-  // Patient Preparation
+  // ── 5. Patient Preparation ──
   preparation: z.array(z.string()).optional().default([]),
   preparationInstructions: z.string().optional(),
-  // Results (left empty initially)
+  // ── 7. Referring Clinician ──
+  clinicianName: z.string().optional(),
+  clinicianDepartment: z.string().optional(),
+  clinicianContact: z.string().optional(),
+  // ── Results (left empty initially) ──
   findings: z.string().optional(),
   impression: z.string().optional(),
   recommendations: z.string().optional(),

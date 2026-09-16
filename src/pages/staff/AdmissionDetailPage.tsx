@@ -284,8 +284,8 @@ const AdmissionDetailPage: React.FC = () => {
         <div className="grid md:grid-cols-2 gap-x-6">
           <Row label="Admitting Physician" value={adm.admittingPhysician} />
           <Row label="Care Team" value={adm.careTeam} />
-          <Row label="Signature" value={adm.createdBy?.name || '—'} />
-          <Row label="Role" value={adm.createdBy?.role || '—'} />
+          <Row label="Signature" value={typeof adm.createdBy === 'object' ? adm.createdBy.name : adm.createdBy} />
+          <Row label="Role" value={typeof adm.createdBy === 'object' ? adm.createdBy.role : '—'} />
           <Row label="Date" value={formatDate(adm.createdAt)} fullWidth />
         </div>
       </Card>

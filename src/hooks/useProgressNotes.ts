@@ -297,9 +297,9 @@ export function buildBlankProgressNote(
   ];
 
   return {
-    patientId,
-    createdAt: now.toISOString(),
-
+    // patientId and createdAt are excluded — this function returns
+    // Omit<ProgressNote, 'id' | 'patientId' | 'createdAt'> so those
+    // fields must NOT appear in the literal.
     hospitalName: 'Yekatit 12 Hospital Medical College',
     palliativeCareUnit: 'Palliative Care Unit',
     patientName,

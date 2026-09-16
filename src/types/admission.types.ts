@@ -14,6 +14,8 @@ export interface HospitalAdmission {
   comorbidities: string[];
   estimatedPrognosis: 'Days' | 'Weeks' | 'Months' | 'Uncertain';
   ppsScore: number;
+  /** Karnofsky Performance Scale score */
+  kpsScore?: number;
   functionalStatus: 'FullyIndependent' | 'PartiallyDependent' | 'FullyDependent';
   painScore: number;
   painType: 'Acute' | 'Chronic' | 'Neuropathic' | 'Mixed';
@@ -23,6 +25,8 @@ export interface HospitalAdmission {
   socialChallenges?: string;
   spiritualConcerns: boolean;
   spiritualSupportPreferred?: 'ReligiousLeader' | 'Counselor' | 'Other';
+  /** Free-text description of spiritual needs when spiritualConcerns is true */
+  spiritualNeedsDescription?: string;
   painManagementPlan: string;
   medicationPlan: string;
   nursingCarePlan: string;
@@ -31,7 +35,27 @@ export interface HospitalAdmission {
   physiotherapyRequired: boolean;
   dischargeReason?: 'Improved' | 'Deceased';
   status: 'Active' | 'Discharged';
-  createdBy: string;
+  // ── Patient identification fields (denormalised from patient record) ──
+  /** Patient full name at time of admission */
+  patientName?: string;
+  /** Hospital MRN / patient display ID */
+  hospitalPatientId?: string;
+  /** Patient age at time of admission */
+  age?: number;
+  sex?: 'Male' | 'Female';
+  dateOfBirth?: string;
+  address?: string;
+  phone?: string;
+  emergencyContactName?: string;
+  emergencyContactRelationship?: string;
+  emergencyContactPhone?: string;
+  // ── Referral information ──
+  referredFrom?: string;
+  referringClinician?: string;
+  referralReason?: string;
+  // ── Audit ──
+  /** Staff member who created the admission record */
+  createdBy: string | { name: string; role: string };
   createdAt: string;
   updatedAt: string;
 }

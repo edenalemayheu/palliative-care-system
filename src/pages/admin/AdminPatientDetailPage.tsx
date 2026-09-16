@@ -10,7 +10,7 @@ import { usePatientMedications } from '@/hooks/useMedications';
 import { usePatientLabs } from '@/hooks/useLabs';
 import { usePatientReferrals } from '@/hooks/useReferrals';
 import { usePatientAdmissions } from '@/hooks/useAdmissions';
-import { useProgressNotesStore } from '@/hooks/useProgressNotes';
+import { useProgressNotes } from '@/hooks/useProgressNotes';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -149,11 +149,11 @@ const AdminPatientDetailPage: React.FC = () => {
   );
   const [showDischargeSummaryViewer, setShowDischargeSummaryViewer] = useState(false);
 
-  // Progress notes from Zustand store
-  const allProgressNotes = useProgressNotesStore((s) => s.notes);
+  // Progress notes — fetched via React Query, already scoped to this patient
+  const { data: progressNotesData } = useProgressNotes(patientId ?? '');
   const progressNotes = React.useMemo(
-    () => allProgressNotes.filter((n) => n.patientId === (patientId ?? '')),
-    [allProgressNotes, patientId],
+    () => progressNotesData?.items ?? [],
+    [progressNotesData],
   );
 
   // Primary patient data
